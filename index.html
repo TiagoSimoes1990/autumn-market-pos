@@ -1,0 +1,1479 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#9a3412" />
+  <title>Caixa Registadora — Feira de Outono</title>
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            autumn: {
+              50: '#fffbeb',
+              100: '#fef3c7',
+              200: '#fde68a',
+              500: '#f59e0b',
+              600: '#d97706',
+              700: '#b45309',
+              800: '#9a3412',
+              900: '#7c2d12',
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    :root {
+      --target-size: 56px;
+      --accent-amber: #fbbf24;
+      --accent-orange: #ea580c;
+    }
+
+    * {
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+
+    body {
+      overflow-wrap: anywhere;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    h1, h2, h3 {
+      text-wrap: balance;
+    }
+
+    p, li {
+      text-wrap: pretty;
+    }
+
+    /* Minimum 56px touch target height for general interactive controls */
+    :where(button, select, input:not([type="checkbox"], [type="radio"]), [role="button"], [role="tab"]) {
+      min-block-size: var(--target-size);
+      min-inline-size: var(--target-size);
+    }
+
+    /* Compact quantity stepper buttons still strictly >= 48x48px (>= 44px WCAG 2.5.5) */
+    .qty-btn {
+      min-block-size: 48px;
+      min-inline-size: 48px;
+    }
+
+    /* Prevent iOS/Android auto-zoom on form fields */
+    input, select, textarea {
+      font: inherit;
+      font-size: max(1rem, 1em);
+      user-select: auto;
+      -webkit-user-select: auto;
+    }
+
+    /* Safe-area padding for sticky header and mobile bottom bar */
+    .safe-top-header {
+      padding-top: max(0.5rem, env(safe-area-inset-top, 0px));
+      padding-left: max(0.75rem, env(safe-area-inset-left, 0px));
+      padding-right: max(0.75rem, env(safe-area-inset-right, 0px));
+    }
+
+    .safe-bottom-bar {
+      padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+      padding-left: max(0.75rem, env(safe-area-inset-left, 0px));
+      padding-right: max(0.75rem, env(safe-area-inset-right, 0px));
+    }
+
+    /* Accessible active tab indicator using border on pseudo-element (survives forced-colors mode) */
+    .nav-tab,
+    .category-pill,
+    .bill-btn {
+      position: relative;
+    }
+
+    .nav-tab[aria-selected="true"]::after {
+      content: "";
+      position: absolute;
+      inset: auto 0.5rem 0;
+      border-block-end: 4px solid var(--accent-amber);
+      border-radius: 9999px;
+    }
+
+    .category-pill[aria-pressed="true"]::after,
+    .bill-btn[aria-pressed="true"]::after {
+      content: "";
+      position: absolute;
+      inset: auto 0.65rem 0.2rem;
+      border-block-end: 3px solid currentColor;
+      border-radius: 9999px;
+    }
+
+    /* Container query setup for the Product Grid so it adapts to its own column width */
+    .product-grid-container {
+      container: product-grid / inline-size;
+    }
+
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.75rem;
+    }
+
+    @container product-grid (inline-size >= 30rem) {
+      .product-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.875rem;
+      }
+    }
+
+    @container product-grid (inline-size >= 48rem) {
+      .product-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 1rem;
+      }
+    }
+
+    /* Subtle visual pulse animation when a product card is tapped */
+    @keyframes card-tap-pulse {
+      0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.55);
+      }
+      40% {
+        transform: scale(0.96);
+        box-shadow: 0 0 0 8px rgba(245, 158, 11, 0.25);
+      }
+      100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+      }
+    }
+
+    .animate-card-pulse {
+      animation: card-tap-pulse 320ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    /* Modal Dialog scroll containment rules */
+    dialog:modal {
+      overscroll-behavior: contain;
+    }
+
+    dialog::backdrop {
+      overflow: hidden;
+      overscroll-behavior: contain;
+      background-color: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(2px);
+    }
+
+    /* Hide scrollbar cleanly on horizontal pill bars while keeping touch scroll */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-900 min-h-dvh flex flex-col font-sans antialiased pb-24 md:pb-6">
+
+  <!-- Sticky Top Navigation Bar -->
+  <header class="sticky top-0 z-30 bg-gradient-to-r from-orange-900 via-amber-800 to-orange-800 text-white shadow-lg safe-top-header border-b border-orange-950/30">
+    <div class="max-w-7xl mx-auto pb-2 flex flex-wrap items-center justify-between gap-2">
+      <!-- Brand Title -->
+      <div class="flex items-center gap-2.5 py-1">
+        <span class="text-3xl leading-none" aria-hidden="true">🍂</span>
+        <div>
+          <h1 class="text-lg sm:text-xl font-extrabold tracking-tight leading-tight text-amber-50">
+            Feira de Outono
+          </h1>
+          <p class="text-xs font-medium text-amber-200/90 hidden sm:block">
+            Caixa Registadora Escolar • Guardado Localmente
+          </p>
+        </div>
+      </div>
+
+      <!-- 3 Main Navigation Tabs -->
+      <nav aria-label="Navegação principal" class="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar w-full sm:w-auto pb-0.5 sm:pb-0">
+        <button
+          type="button"
+          id="tab-btn-register"
+          data-view="register"
+          aria-selected="true"
+          class="nav-tab flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm sm:text-base transition-all bg-amber-500/25 text-amber-50 ring-2 ring-amber-300/70 shadow-sm active:scale-95"
+        >
+          <span class="text-xl leading-none" aria-hidden="true">🛒</span>
+          <span>Caixa</span>
+        </button>
+
+        <button
+          type="button"
+          id="tab-btn-products"
+          data-view="products"
+          aria-selected="false"
+          class="nav-tab flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm sm:text-base transition-all bg-orange-950/35 text-amber-100/90 hover:bg-orange-950/55 active:scale-95"
+        >
+          <span class="text-xl leading-none" aria-hidden="true">📦</span>
+          <span>Produtos</span>
+        </button>
+
+        <button
+          type="button"
+          id="tab-btn-report"
+          data-view="report"
+          aria-selected="false"
+          class="nav-tab flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm sm:text-base transition-all bg-orange-950/35 text-amber-100/90 hover:bg-orange-950/55 active:scale-95"
+        >
+          <span class="text-xl leading-none" aria-hidden="true">📊</span>
+          <span>Fecho de Caixa</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Toast Notification Banner (Accessible Status Live Region) -->
+  <div
+    id="toast-container"
+    role="status"
+    aria-live="polite"
+    class="fixed top-20 left-1/2 -translate-x-1/2 z-40 w-[min(92vw,30rem)] pointer-events-none transition-all duration-300 opacity-0 -translate-y-3"
+  >
+    <div id="toast-box" class="bg-emerald-700 text-white rounded-2xl px-5 py-3.5 shadow-xl border-2 border-emerald-400 flex items-center gap-3">
+      <span class="text-2xl leading-none" aria-hidden="true">✅</span>
+      <div class="flex-1">
+        <p id="toast-title" class="font-extrabold text-base leading-snug">Venda registada com sucesso!</p>
+        <p id="toast-subtitle" class="text-xs font-semibold text-emerald-100"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Workspace -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-4 lg:p-6">
+
+    <!-- VIEW 1: 🛒 CAIXA (Register View - Active by default) -->
+    <section id="view-register" aria-labelledby="tab-btn-register">
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-4 lg:gap-6 items-start">
+
+        <!-- Left Area (2/3 width on md+): Product Catalog & Category Filter Pills -->
+        <div class="md:col-span-7 lg:col-span-8 flex flex-col gap-3.5">
+
+          <!-- Category Filter Bar -->
+          <div class="bg-white rounded-2xl p-2 shadow-sm border border-slate-200/90">
+            <div
+              id="category-filters"
+              role="group"
+              aria-label="Filtrar produtos por categoria"
+              class="flex items-center gap-2 overflow-x-auto no-scrollbar"
+            >
+              <!-- Populated dynamically by JS -->
+            </div>
+          </div>
+
+          <!-- Product Grid Container -->
+          <div class="product-grid-container">
+            <div
+              id="product-grid"
+              class="product-grid"
+              aria-label="Grelha de produtos"
+            >
+              <!-- Populated dynamically by JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Area (1/3 width on md+, sticky): Current Sale Basket & Change Calculator -->
+        <aside
+          id="basket-panel"
+          aria-label="Cesto da venda atual"
+          class="md:col-span-5 lg:col-span-4 bg-white rounded-2xl shadow-md border-2 border-slate-200/90 p-3.5 sm:p-4 md:sticky md:top-24 flex flex-col gap-3.5"
+        >
+          <!-- Basket Header -->
+          <div class="flex items-center justify-between border-b border-slate-200 pb-2.5">
+            <div class="flex items-center gap-2">
+              <span class="text-2xl leading-none" aria-hidden="true">🧺</span>
+              <h2 class="text-lg font-extrabold text-slate-900">Pedido Atual</h2>
+            </div>
+            <span
+              id="cart-count-badge"
+              class="px-3 py-1 rounded-full text-xs font-extrabold bg-amber-100 text-amber-950 border border-amber-300"
+            >
+              0 itens
+            </span>
+          </div>
+
+          <!-- Basket Item List -->
+          <div
+            id="cart-items-container"
+            class="max-h-[34vh] md:max-h-[32vh] overflow-y-auto divide-y divide-slate-200/80 pr-0.5"
+          >
+            <!-- Populated dynamically by JS -->
+          </div>
+
+          <!-- Unmistakable Total Banner -->
+          <div class="bg-slate-900 text-white rounded-xl p-3.5 flex items-center justify-between shadow-inner">
+            <span class="text-sm sm:text-base font-extrabold tracking-wide uppercase text-amber-300">
+              TOTAL A PAGAR:
+            </span>
+            <span id="cart-total-display" class="text-2xl sm:text-3xl font-black tracking-tight text-white">
+              0,00 €
+            </span>
+          </div>
+
+          <!-- Quick Change Calculator ("Calculadora de Troco") -->
+          <div class="bg-amber-50/80 rounded-xl p-3 border border-amber-200/90 flex flex-col gap-2.5">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-extrabold uppercase tracking-wider text-amber-950 flex items-center gap-1.5">
+                <span aria-hidden="true">💶</span> Calculadora de Troco
+              </span>
+              <button
+                type="button"
+                id="clear-payment-btn"
+                class="text-xs font-bold text-amber-900 underline px-2 py-1 rounded hover:bg-amber-200/50 hidden"
+                style="min-block-size: 32px; min-inline-size: auto;"
+              >
+                Valor exato
+              </button>
+            </div>
+
+            <!-- Quick-Tap Bill Buttons: [ 2€ ], [ 5€ ], [ 10€ ], [ 20€ ], [ 50€ ] -->
+            <div
+              id="bill-buttons-group"
+              role="group"
+              aria-label="Notas e moedas rápidas"
+              class="grid grid-cols-5 gap-1.5"
+            >
+              <button
+                type="button"
+                data-bill="2"
+                aria-pressed="false"
+                class="bill-btn rounded-xl font-extrabold text-sm sm:text-base bg-white text-slate-900 border-2 border-slate-300 hover:border-amber-500 active:scale-95 transition-all shadow-sm"
+                style="min-inline-size: 0;"
+              >
+                2€
+              </button>
+              <button
+                type="button"
+                data-bill="5"
+                aria-pressed="false"
+                class="bill-btn rounded-xl font-extrabold text-sm sm:text-base bg-white text-slate-900 border-2 border-slate-300 hover:border-amber-500 active:scale-95 transition-all shadow-sm"
+                style="min-inline-size: 0;"
+              >
+                5€
+              </button>
+              <button
+                type="button"
+                data-bill="10"
+                aria-pressed="false"
+                class="bill-btn rounded-xl font-extrabold text-sm sm:text-base bg-white text-slate-900 border-2 border-slate-300 hover:border-amber-500 active:scale-95 transition-all shadow-sm"
+                style="min-inline-size: 0;"
+              >
+                10€
+              </button>
+              <button
+                type="button"
+                data-bill="20"
+                aria-pressed="false"
+                class="bill-btn rounded-xl font-extrabold text-sm sm:text-base bg-white text-slate-900 border-2 border-slate-300 hover:border-amber-500 active:scale-95 transition-all shadow-sm"
+                style="min-inline-size: 0;"
+              >
+                20€
+              </button>
+              <button
+                type="button"
+                data-bill="50"
+                aria-pressed="false"
+                class="bill-btn rounded-xl font-extrabold text-sm sm:text-base bg-white text-slate-900 border-2 border-slate-300 hover:border-amber-500 active:scale-95 transition-all shadow-sm"
+                style="min-inline-size: 0;"
+              >
+                50€
+              </button>
+            </div>
+
+            <!-- Custom Cash Received Input -->
+            <div class="flex items-center gap-2">
+              <label for="custom-cash-input" class="text-xs sm:text-sm font-bold text-slate-700 whitespace-nowrap">
+                Outro valor (€):
+              </label>
+              <div class="relative flex-1">
+                <input
+                  type="number"
+                  id="custom-cash-input"
+                  name="custom_cash"
+                  inputmode="decimal"
+                  step="0.01"
+                  min="0"
+                  placeholder="0,00"
+                   enterkeyhint="done"
+                  class="w-full rounded-xl border-2 border-slate-300 bg-white px-3 py-2 pr-8 font-bold text-slate-900 focus:border-amber-600 focus:outline-none"
+                />
+                <span class="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-slate-500 pointer-events-none">€</span>
+              </div>
+            </div>
+
+            <!-- Change Output Display -->
+            <div
+              id="change-result-box"
+              aria-live="polite"
+              class="rounded-xl px-3.5 py-2.5 bg-white border-2 border-amber-300 flex items-center justify-between"
+            >
+              <span id="change-label" class="text-sm font-extrabold text-slate-700">
+                Troco a devolver:
+              </span>
+              <span id="change-amount" class="text-xl sm:text-2xl font-black text-emerald-700">
+                0,00 €
+              </span>
+            </div>
+          </div>
+
+          <!-- Two Main Action Buttons: Limpar & FINALIZAR VENDA -->
+          <div class="grid grid-cols-3 gap-2.5 pt-1">
+            <button
+              type="button"
+              id="clear-cart-btn"
+              class="col-span-1 rounded-xl font-extrabold text-sm sm:text-base bg-slate-200 hover:bg-red-100 text-slate-800 hover:text-red-900 border-2 border-slate-300 hover:border-red-300 active:scale-95 transition-all flex items-center justify-center gap-1.5 px-2"
+            >
+              <span aria-hidden="true">🗑️</span>
+              <span>Limpar</span>
+            </button>
+
+            <button
+              type="button"
+              id="checkout-btn"
+              class="col-span-2 rounded-xl font-black text-base sm:text-lg bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white shadow-md hover:shadow-lg border-2 border-emerald-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2 px-4 py-3.5"
+            >
+              <span class="text-xl leading-none" aria-hidden="true">✅</span>
+              <span>FINALIZAR VENDA</span>
+            </button>
+          </div>
+        </aside>
+
+      </div>
+    </section>
+
+    <!-- VIEW 2: 📦 PRODUTOS (Inventory Manager View - Phase 3) -->
+    <section id="view-products" aria-labelledby="tab-btn-products" hidden>
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 text-center">
+        <span class="text-5xl block mb-3" aria-hidden="true">📦</span>
+        <h2 class="text-xl font-extrabold text-slate-800 mb-2">Gestão de Produtos</h2>
+        <p class="text-slate-600 max-w-md mx-auto">
+          O gestor de catálogo (<strong id="products-count-badge">0</strong> produtos guardados localmente) será implementado na Fase 3.
+        </p>
+      </div>
+    </section>
+
+    <!-- VIEW 3: 📊 FECHO DE CAIXA (End-of-Day Report View - Phase 4) -->
+    <section id="view-report" aria-labelledby="tab-btn-report" hidden>
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 text-center">
+        <span class="text-5xl block mb-3" aria-hidden="true">📊</span>
+        <h2 class="text-xl font-extrabold text-slate-800 mb-2">Fecho de Caixa e Relatório do Dia</h2>
+        <p class="text-slate-600 max-w-md mx-auto">
+          O resumo de vendas (<strong id="sales-count-badge">0</strong> vendas registadas), total apurado e contagem por artigo será implementado na Fase 4.
+        </p>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Mobile Floating Bottom Bar (Visible on phones in Register View so user can jump to Basket) -->
+  <div
+    id="mobile-cart-bar"
+    class="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-slate-900 text-white border-t-2 border-amber-500 shadow-2xl safe-bottom-bar pt-2.5"
+  >
+    <div class="flex items-center justify-between gap-3">
+      <div class="flex flex-col">
+        <span id="mobile-bar-items" class="text-xs font-bold text-amber-300 uppercase tracking-wide">
+          0 itens no cesto
+        </span>
+        <span id="mobile-bar-total" class="text-xl font-black text-white">
+          TOTAL: 0,00 €
+        </span>
+      </div>
+      <button
+        type="button"
+        id="mobile-scroll-basket-btn"
+        class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-sm flex items-center gap-2 shadow-md active:scale-95"
+      >
+        <span>Ver Cesto / Pagar</span>
+        <span aria-hidden="true">↓</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL 1: "+ Valor Livre" (Custom Item Modal) -->
+  <dialog
+    id="custom-item-dialog"
+    closedby="any"
+    aria-labelledby="custom-item-title"
+    class="w-[min(94vw,28rem)] rounded-2xl bg-white p-0 shadow-2xl border-2 border-amber-500 text-slate-900"
+  >
+    <div class="bg-gradient-to-r from-amber-700 to-orange-700 text-white px-5 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <span class="text-2xl leading-none" aria-hidden="true">🏷️</span>
+        <h2 id="custom-item-title" class="text-lg font-extrabold">Adicionar Valor Livre</h2>
+      </div>
+      <button
+        type="button"
+        id="close-custom-dialog-btn"
+        aria-label="Fechar janela"
+        class="rounded-xl bg-black/20 hover:bg-black/35 text-white font-bold px-3 py-1.5 text-lg"
+        style="min-block-size: 44px; min-inline-size: 44px;"
+      >
+        ✕
+      </button>
+    </div>
+
+    <form id="custom-item-form" class="p-5 flex flex-col gap-4" novalidate>
+      <div>
+        <label for="custom-item-price" class="block text-sm font-extrabold text-slate-800 mb-1">
+          Preço (€) <span class="text-red-600" aria-hidden="true">*</span>
+        </label>
+        <!-- Quick Preset Price Chips for Fast Touch Entry -->
+        <div class="grid grid-cols-4 gap-1.5 mb-2.5" role="group" aria-label="Preços rápidos">
+          <button type="button" data-preset-price="0.50" class="preset-price-btn rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-300 font-bold text-sm text-amber-950 py-1.5" style="min-block-size: 44px; min-inline-size: 0;">0,50 €</button>
+          <button type="button" data-preset-price="1.00" class="preset-price-btn rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-300 font-bold text-sm text-amber-950 py-1.5" style="min-block-size: 44px; min-inline-size: 0;">1,00 €</button>
+          <button type="button" data-preset-price="1.50" class="preset-price-btn rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-300 font-bold text-sm text-amber-950 py-1.5" style="min-block-size: 44px; min-inline-size: 0;">1,50 €</button>
+          <button type="button" data-preset-price="2.00" class="preset-price-btn rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-300 font-bold text-sm text-amber-950 py-1.5" style="min-block-size: 44px; min-inline-size: 0;">2,00 €</button>
+        </div>
+        <input
+          type="number"
+          id="custom-item-price"
+          name="price"
+          inputmode="decimal"
+          step="0.01"
+          min="0.01"
+          required
+          autofocus
+          placeholder="Ex: 1,50"
+          enterkeyhint="next"
+          aria-describedby="custom-price-error"
+          class="w-full rounded-xl border-2 border-slate-300 px-3.5 py-2.5 font-extrabold text-xl text-slate-900 focus:border-amber-600 focus:outline-none"
+        />
+        <p id="custom-price-error" class="text-xs font-bold text-red-600 mt-1 hidden">
+          Por favor, introduza um preço válido superior a 0,00 €.
+        </p>
+      </div>
+
+      <div>
+        <label for="custom-item-desc" class="block text-sm font-extrabold text-slate-800 mb-1">
+          Descrição <span class="text-xs font-normal text-slate-500">(opcional — predefinição: "Item Diverso")</span>
+        </label>
+        <input
+          type="text"
+          id="custom-item-desc"
+          name="description"
+          placeholder="Item Diverso"
+          maxlength="60"
+          enterkeyhint="done"
+          class="w-full rounded-xl border-2 border-slate-300 px-3.5 py-2.5 font-semibold text-slate-900 focus:border-amber-600 focus:outline-none"
+        />
+      </div>
+
+      <div class="grid grid-cols-2 gap-2.5 pt-2">
+        <button
+          type="button"
+          id="cancel-custom-item-btn"
+          class="rounded-xl font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 px-4 py-3"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          class="rounded-xl font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 border border-emerald-700 px-4 py-3 shadow-md"
+        >
+          + Adicionar ao Cesto
+        </button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- MODAL 2: Clear Basket Confirmation -->
+  <dialog
+    id="confirm-clear-dialog"
+    closedby="any"
+    aria-labelledby="confirm-clear-title"
+    class="w-[min(92vw,24rem)] rounded-2xl bg-white p-5 shadow-2xl border-2 border-slate-300 text-slate-900"
+  >
+    <div class="flex flex-col items-center text-center gap-3">
+      <span class="text-4xl leading-none" aria-hidden="true">🗑️</span>
+      <h2 id="confirm-clear-title" class="text-lg font-extrabold text-slate-900">
+        Limpar o pedido atual?
+      </h2>
+      <p class="text-sm text-slate-600">
+        Todos os itens adicionados ao cesto atual serão removidos.
+      </p>
+      <form method="dialog" class="grid grid-cols-2 gap-2.5 w-full pt-2">
+        <button
+          type="submit"
+          value="cancel"
+          autofocus
+          class="rounded-xl font-bold text-slate-800 bg-slate-100 hover:bg-slate-200 border border-slate-300 px-4 py-3"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          value="confirm"
+          class="rounded-xl font-extrabold text-white bg-red-600 hover:bg-red-700 border border-red-700 px-4 py-3"
+        >
+          Sim, Limpar
+        </button>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- Application State & View Engine -->
+  <script>
+    (function () {
+      'use strict';
+
+      // ==========================================
+      // 1. CONSTANTS & DEFAULT SEED CATALOG
+      // ==========================================
+      const STORAGE_KEYS = {
+        PRODUCTS: 'autumn_pos_products',
+        SALES: 'autumn_pos_sales'
+      };
+
+      const CATEGORIES = [
+        { id: 'Todos', label: 'Todos', emoji: '🍂' },
+        { id: 'Comida', label: 'Comida', emoji: '🍲' },
+        { id: 'Bebidas', label: 'Bebidas', emoji: '🧃' },
+        { id: 'Fruta', label: 'Fruta', emoji: '🍎' },
+        { id: 'Outros', label: 'Outros', emoji: '🍯' }
+      ];
+
+      const DEFAULT_PRODUCTS = [
+        { id: 'prod_castanhas', name: 'Castanhas Assadas', price: 2.00, category: 'Comida', emoji: '🌰' },
+        { id: 'prod_bolo', name: 'Fatia de Bolo', price: 1.00, category: 'Comida', emoji: '🍰' },
+        { id: 'prod_pao_chourico', name: 'Pão com Chouriço', price: 2.50, category: 'Comida', emoji: '🥖' },
+        { id: 'prod_sopa', name: 'Sopa da Pedra / Caldo Verde', price: 2.00, category: 'Comida', emoji: '🥣' },
+        { id: 'prod_sumo', name: 'Sumo Natural', price: 1.00, category: 'Bebidas', emoji: '🧃' },
+        { id: 'prod_agua', name: 'Água', price: 0.50, category: 'Bebidas', emoji: '💧' },
+        { id: 'prod_cafe', name: 'Café', price: 0.80, category: 'Bebidas', emoji: '☕' },
+        { id: 'prod_fruta', name: 'Maçãs / Fruta da Época', price: 0.50, category: 'Fruta', emoji: '🍎' },
+        { id: 'prod_compota', name: 'Compota Caseira', price: 3.00, category: 'Outros', emoji: '🍯' }
+      ];
+
+      const CATEGORY_BADGE_STYLES = {
+        Comida: 'bg-orange-100 text-orange-900 border-orange-200',
+        Bebidas: 'bg-amber-100 text-amber-900 border-amber-200',
+        Fruta: 'bg-emerald-100 text-emerald-900 border-emerald-200',
+        Outros: 'bg-slate-100 text-slate-800 border-slate-200'
+      };
+
+      // ==========================================
+      // 2. LOCALSTORAGE & CART STATE MANAGER
+      // ==========================================
+      const StateManager = {
+        products: [],
+        sales: [],
+        activeView: 'register',
+        activeCategory: 'Todos',
+        // Current active cart: Array of { id, name, price, qty, emoji }
+        cart: [],
+        // Payment calculator state
+        selectedBill: null,
+        customCashInput: '',
+
+        init() {
+          this.products = this.loadProducts();
+          this.sales = this.loadSales();
+        },
+
+        loadProducts() {
+          try {
+            const raw = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
+            if (raw) {
+              const parsed = JSON.parse(raw);
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                return parsed;
+              }
+            }
+          } catch (err) {
+            console.error('Erro ao ler produtos do localStorage:', err);
+          }
+          this.saveProducts(DEFAULT_PRODUCTS);
+          return [...DEFAULT_PRODUCTS];
+        },
+
+        saveProducts(productsList) {
+          this.products = productsList;
+          try {
+            localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(productsList));
+          } catch (err) {
+            console.error('Erro ao guardar produtos no localStorage:', err);
+          }
+        },
+
+        loadSales() {
+          try {
+            const raw = localStorage.getItem(STORAGE_KEYS.SALES);
+            if (raw) {
+              const parsed = JSON.parse(raw);
+              if (Array.isArray(parsed)) {
+                return parsed;
+              }
+            }
+          } catch (err) {
+            console.error('Erro ao ler vendas do localStorage:', err);
+          }
+          this.saveSales([]);
+          return [];
+        },
+
+        saveSales(salesList) {
+          this.sales = salesList;
+          try {
+            localStorage.setItem(STORAGE_KEYS.SALES, JSON.stringify(salesList));
+          } catch (err) {
+            console.error('Erro ao guardar vendas no localStorage:', err);
+          }
+        },
+
+        // Cart Manipulation Methods
+        addToCart(item) {
+          const unitPrice = roundCurrency(item.price);
+          const existing = this.cart.find(
+            (c) => c.id === item.id && roundCurrency(c.price) === unitPrice && c.name === item.name
+          );
+          if (existing) {
+            existing.qty += 1;
+          } else {
+            this.cart.push({
+              id: item.id,
+              name: item.name,
+              price: unitPrice,
+              qty: 1,
+              emoji: item.emoji || '🏷️'
+            });
+          }
+        },
+
+        updateCartQty(cartIndex, delta) {
+          const target = this.cart[cartIndex];
+          if (!target) return;
+          target.qty += delta;
+          if (target.qty <= 0) {
+            this.cart.splice(cartIndex, 1);
+          }
+        },
+
+        getCartTotal() {
+          return roundCurrency(
+            this.cart.reduce((sum, item) => sum + item.price * item.qty, 0)
+          );
+        },
+
+        getCartItemCount() {
+          return this.cart.reduce((sum, item) => sum + item.qty, 0);
+        },
+
+        getProductQtyInCart(productId) {
+          return this.cart
+            .filter((item) => item.id === productId)
+            .reduce((sum, item) => sum + item.qty, 0);
+        },
+
+        getPaymentGiven() {
+          if (this.customCashInput !== '' && !Number.isNaN(Number(this.customCashInput))) {
+            return roundCurrency(Number(this.customCashInput));
+          }
+          if (this.selectedBill !== null) {
+            return roundCurrency(this.selectedBill);
+          }
+          return 0;
+        },
+
+        resetCartAndPayment() {
+          this.cart = [];
+          this.selectedBill = null;
+          this.customCashInput = '';
+          const cashInputEl = document.getElementById('custom-cash-input');
+          if (cashInputEl) {
+            cashInputEl.value = '';
+          }
+        }
+      };
+
+      // ==========================================
+      // 3. FORMATTING & SECURITY HELPERS
+      // ==========================================
+      function roundCurrency(val) {
+        return Math.round((Number(val) + Number.EPSILON) * 100) / 100;
+      }
+
+      function formatCurrency(amount) {
+        const numeric = Number(amount) || 0;
+        return numeric.toFixed(2).replace('.', ',') + ' €';
+      }
+
+      function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = String(str ?? '');
+        return div.innerHTML;
+      }
+
+      let toastTimeoutId = null;
+      function showToast(title, subtitle = '') {
+        const container = document.getElementById('toast-container');
+        const titleEl = document.getElementById('toast-title');
+        const subEl = document.getElementById('toast-subtitle');
+        if (!container || !titleEl || !subEl) return;
+
+        titleEl.textContent = title;
+        subEl.textContent = subtitle;
+        subEl.classList.toggle('hidden', !subtitle);
+
+        container.classList.remove('opacity-0', '-translate-y-3');
+        container.classList.add('opacity-100', 'translate-y-0');
+
+        if (toastTimeoutId) clearTimeout(toastTimeoutId);
+        toastTimeoutId = setTimeout(() => {
+          container.classList.remove('opacity-100', 'translate-y-0');
+          container.classList.add('opacity-0', '-translate-y-3');
+        }, 3200);
+      }
+
+      // ==========================================
+      // 4. UI RENDERING ENGINE
+      // ==========================================
+      function renderNavigation() {
+        const navButtons = document.querySelectorAll('.nav-tab');
+        navButtons.forEach((btn) => {
+          const view = btn.getAttribute('data-view');
+          const isSelected = view === StateManager.activeView;
+          btn.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+
+          if (isSelected) {
+            btn.className =
+              'nav-tab flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm sm:text-base transition-all bg-amber-500/25 text-amber-50 ring-2 ring-amber-300/70 shadow-sm active:scale-95';
+          } else {
+            btn.className =
+              'nav-tab flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm sm:text-base transition-all bg-orange-950/35 text-amber-100/90 hover:bg-orange-950/55 active:scale-95';
+          }
+        });
+
+        const views = {
+          register: document.getElementById('view-register'),
+          products: document.getElementById('view-products'),
+          report: document.getElementById('view-report')
+        };
+
+        Object.entries(views).forEach(([key, section]) => {
+          if (!section) return;
+          if (key === StateManager.activeView) {
+            section.removeAttribute('hidden');
+          } else {
+            section.setAttribute('hidden', '');
+          }
+        });
+
+        const mobileBar = document.getElementById('mobile-cart-bar');
+        if (mobileBar) {
+          mobileBar.classList.toggle('hidden', StateManager.activeView !== 'register');
+        }
+
+        const countBadge = document.getElementById('products-count-badge');
+        if (countBadge) {
+          countBadge.textContent = String(StateManager.products.length);
+        }
+
+        const salesBadge = document.getElementById('sales-count-badge');
+        if (salesBadge) {
+          salesBadge.textContent = String(StateManager.sales.length);
+        }
+      }
+
+      function renderCategoryFilters() {
+        const container = document.getElementById('category-filters');
+        if (!container) return;
+
+        container.innerHTML = CATEGORIES.map((cat) => {
+          const isActive = StateManager.activeCategory === cat.id;
+          const count =
+            cat.id === 'Todos'
+              ? StateManager.products.length
+              : StateManager.products.filter((p) => p.category === cat.id).length;
+
+          const baseClasses =
+            'category-pill flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm sm:text-base transition-all active:scale-95 border';
+          const activeClasses =
+            'bg-amber-600 text-white border-amber-700 shadow-sm';
+          const inactiveClasses =
+            'bg-slate-100 text-slate-800 border-slate-200 hover:bg-amber-50 hover:border-amber-300';
+
+          return `
+            <button
+              type="button"
+              data-category="${escapeHtml(cat.id)}"
+              aria-pressed="${isActive ? 'true' : 'false'}"
+              class="${baseClasses} ${isActive ? activeClasses : inactiveClasses}"
+            >
+              <span class="text-lg leading-none" aria-hidden="true">${escapeHtml(cat.emoji)}</span>
+              <span>${escapeHtml(cat.label)}</span>
+              <span class="px-2 py-0.5 text-xs rounded-full font-extrabold ${
+                isActive ? 'bg-amber-800/60 text-amber-50' : 'bg-slate-200/80 text-slate-700'
+              }">
+                ${count}
+              </span>
+            </button>
+          `;
+        }).join('');
+      }
+
+      function renderProductGrid() {
+        const grid = document.getElementById('product-grid');
+        if (!grid) return;
+
+        const filteredProducts =
+          StateManager.activeCategory === 'Todos'
+            ? StateManager.products
+            : StateManager.products.filter((p) => p.category === StateManager.activeCategory);
+
+        const productCardsHtml = filteredProducts
+          .map((product) => {
+            const badgeStyle =
+              CATEGORY_BADGE_STYLES[product.category] || CATEGORY_BADGE_STYLES.Outros;
+            const inCartQty = StateManager.getProductQtyInCart(product.id);
+            const activeRing =
+              inCartQty > 0
+                ? 'border-amber-500 bg-amber-50/40 ring-2 ring-amber-400/50'
+                : 'border-slate-200/90 bg-white';
+
+            return `
+              <button
+                type="button"
+                data-product-id="${escapeHtml(product.id)}"
+                class="product-card relative group hover:bg-amber-50/70 active:bg-amber-100/80 rounded-2xl p-3.5 sm:p-4 shadow-sm hover:shadow-md border-2 ${activeRing} hover:border-amber-400 active:border-amber-600 transition-all flex flex-col justify-between text-left"
+              >
+                <div class="w-full flex items-start justify-between gap-2 mb-2.5">
+                  <span class="text-4xl sm:text-5xl leading-none select-none" aria-hidden="true">
+                    ${escapeHtml(product.emoji)}
+                  </span>
+                  <div class="flex flex-col items-end gap-1">
+                    <span class="px-2 py-0.5 text-xs font-bold rounded-md border ${badgeStyle}">
+                      ${escapeHtml(product.category)}
+                    </span>
+                    ${
+                      inCartQty > 0
+                        ? `<span class="px-2.5 py-0.5 text-xs font-black rounded-full bg-amber-600 text-white shadow-sm">
+                            ${inCartQty} no cesto
+                           </span>`
+                        : ''
+                    }
+                  </div>
+                </div>
+
+                <div class="w-full">
+                  <h3 class="font-extrabold text-slate-900 text-base sm:text-lg leading-snug mb-2">
+                    ${escapeHtml(product.name)}
+                  </h3>
+                  <div class="inline-flex items-center px-3 py-1 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-950 font-black text-base sm:text-lg">
+                    ${formatCurrency(product.price)}
+                  </div>
+                </div>
+              </button>
+            `;
+          })
+          .join('');
+
+        // Prominent "+ Valor Livre" card always available in the product grid
+        const customAmountCardHtml = `
+          <button
+            type="button"
+            data-action="open-custom-item"
+            class="product-card group bg-gradient-to-br from-amber-50 via-orange-50 to-amber-100/90 hover:from-amber-100 hover:to-orange-100 rounded-2xl p-3.5 sm:p-4 shadow-sm hover:shadow-md border-2 border-dashed border-amber-600 hover:border-orange-700 transition-all flex flex-col justify-between text-left active:scale-[0.98]"
+          >
+            <div class="w-full flex items-start justify-between gap-2 mb-2.5">
+              <span class="text-4xl sm:text-5xl leading-none select-none" aria-hidden="true">🏷️</span>
+              <span class="px-2 py-0.5 text-xs font-extrabold rounded-md bg-amber-700 text-white">
+                Personalizado
+              </span>
+            </div>
+
+            <div class="w-full">
+              <h3 class="font-black text-orange-950 text-base sm:text-lg leading-snug mb-2">
+                + Valor Livre
+              </h3>
+              <div class="inline-flex items-center px-3 py-1 rounded-lg bg-orange-600 text-white font-extrabold text-sm sm:text-base shadow-sm">
+                Definir Preço €
+              </div>
+            </div>
+          </button>
+        `;
+
+        grid.innerHTML = productCardsHtml + customAmountCardHtml;
+      }
+
+      function renderCart() {
+        const listContainer = document.getElementById('cart-items-container');
+        const countBadge = document.getElementById('cart-count-badge');
+        const totalDisplay = document.getElementById('cart-total-display');
+        const mobileItems = document.getElementById('mobile-bar-items');
+        const mobileTotal = document.getElementById('mobile-bar-total');
+
+        const totalQty = StateManager.getCartItemCount();
+        const totalAmount = StateManager.getCartTotal();
+
+        if (countBadge) {
+          countBadge.textContent = `${totalQty} ${totalQty === 1 ? 'item' : 'itens'}`;
+        }
+        if (totalDisplay) {
+          totalDisplay.textContent = formatCurrency(totalAmount);
+        }
+        if (mobileItems) {
+          mobileItems.textContent = `${totalQty} ${totalQty === 1 ? 'item no cesto' : 'itens no cesto'}`;
+        }
+        if (mobileTotal) {
+          mobileTotal.textContent = `TOTAL: ${formatCurrency(totalAmount)}`;
+        }
+
+        if (!listContainer) return;
+
+        if (StateManager.cart.length === 0) {
+          listContainer.innerHTML = `
+            <div class="py-7 text-center text-slate-500 flex flex-col items-center gap-1.5">
+              <span class="text-3xl leading-none" aria-hidden="true">🛒</span>
+              <p class="font-bold text-slate-700 text-sm">O cesto está vazio</p>
+              <p class="text-xs text-slate-500">Toque nos produtos para adicionar à venda.</p>
+            </div>
+          `;
+        } else {
+          listContainer.innerHTML = StateManager.cart
+            .map((item, idx) => {
+              const lineSubtotal = roundCurrency(item.price * item.qty);
+              return `
+                <div class="py-2.5 flex items-center justify-between gap-2">
+                  <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-1.5">
+                      <span class="text-lg leading-none" aria-hidden="true">${escapeHtml(item.emoji || '🍂')}</span>
+                      <p class="font-extrabold text-slate-900 text-sm sm:text-base leading-tight">
+                        ${escapeHtml(item.name)}
+                      </p>
+                    </div>
+                    <p class="text-xs font-bold text-slate-500 mt-0.5">
+                      ${formatCurrency(item.price)} × ${item.qty} = <strong class="text-slate-800">${formatCurrency(lineSubtotal)}</strong>
+                    </p>
+                  </div>
+
+                  <div class="flex items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      data-cart-index="${idx}"
+                      data-qty-delta="-1"
+                      aria-label="Diminuir quantidade de ${escapeHtml(item.name)}"
+                      class="qty-btn rounded-xl bg-slate-100 hover:bg-red-100 active:bg-red-200 text-slate-900 hover:text-red-900 border border-slate-300 font-black text-xl flex items-center justify-center active:scale-95 transition-all"
+                    >
+                      −
+                    </button>
+                    <span class="w-7 text-center font-black text-base text-slate-900 select-none">
+                      ${item.qty}
+                    </span>
+                    <button
+                      type="button"
+                      data-cart-index="${idx}"
+                      data-qty-delta="1"
+                      aria-label="Aumentar quantidade de ${escapeHtml(item.name)}"
+                      class="qty-btn rounded-xl bg-amber-100 hover:bg-amber-200 active:bg-amber-300 text-amber-950 border border-amber-300 font-black text-xl flex items-center justify-center active:scale-95 transition-all"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              `;
+            })
+            .join('');
+        }
+
+        renderChangeCalculator();
+      }
+
+      function renderChangeCalculator() {
+        const total = StateManager.getCartTotal();
+        const paymentGiven = StateManager.getPaymentGiven();
+        const clearPaymentBtn = document.getElementById('clear-payment-btn');
+        const changeBox = document.getElementById('change-result-box');
+        const changeLabel = document.getElementById('change-label');
+        const changeAmount = document.getElementById('change-amount');
+
+        // Highlight active quick bill button
+        document.querySelectorAll('.bill-btn').forEach((btn) => {
+          const billVal = Number(btn.getAttribute('data-bill'));
+          const isSelected =
+            StateManager.customCashInput === '' && StateManager.selectedBill === billVal;
+          btn.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+
+          if (isSelected) {
+            btn.className =
+              'bill-btn rounded-xl font-black text-sm sm:text-base bg-amber-600 text-white border-2 border-amber-800 shadow-sm active:scale-95 transition-all';
+          } else {
+            btn.className =
+              'bill-btn rounded-xl font-extrabold text-sm sm:text-base bg-white text-slate-900 border-2 border-slate-300 hover:border-amber-500 active:scale-95 transition-all shadow-sm';
+          }
+        });
+
+        if (clearPaymentBtn) {
+          clearPaymentBtn.classList.toggle('hidden', paymentGiven <= 0);
+        }
+
+        if (!changeBox || !changeLabel || !changeAmount) return;
+
+        if (paymentGiven <= 0 || total <= 0) {
+          changeBox.className =
+            'rounded-xl px-3.5 py-2.5 bg-white border-2 border-amber-300 flex items-center justify-between';
+          changeLabel.textContent = 'Troco a devolver:';
+          changeLabel.className = 'text-sm font-extrabold text-slate-700';
+          changeAmount.textContent = formatCurrency(0);
+          changeAmount.className = 'text-xl sm:text-2xl font-black text-emerald-700';
+          return;
+        }
+
+        const diff = roundCurrency(paymentGiven - total);
+        if (diff >= 0) {
+          changeBox.className =
+            'rounded-xl px-3.5 py-2.5 bg-emerald-50 border-2 border-emerald-500 flex items-center justify-between';
+          changeLabel.textContent = 'Troco a devolver:';
+          changeLabel.className = 'text-sm font-extrabold text-emerald-950';
+          changeAmount.textContent = formatCurrency(diff);
+          changeAmount.className = 'text-xl sm:text-2xl font-black text-emerald-700';
+        } else {
+          changeBox.className =
+            'rounded-xl px-3.5 py-2.5 bg-red-50 border-2 border-red-400 flex items-center justify-between';
+          changeLabel.textContent = 'Valor em falta:';
+          changeLabel.className = 'text-sm font-extrabold text-red-900';
+          changeAmount.textContent = formatCurrency(Math.abs(diff));
+          changeAmount.className = 'text-xl sm:text-2xl font-black text-red-700';
+        }
+      }
+
+      // ==========================================
+      // 5. ACTIONS: CHECKOUT & MODALS
+      // ==========================================
+      function handleFinalizeSale() {
+        if (StateManager.cart.length === 0) {
+          showToast('O cesto está vazio!', 'Adicione pelo menos um artigo antes de finalizar.');
+          return;
+        }
+
+        const total = StateManager.getCartTotal();
+        const rawPayment = StateManager.getPaymentGiven();
+
+        // If cashier entered a payment smaller than total, warn before completing
+        if (rawPayment > 0 && rawPayment < total) {
+          const missing = roundCurrency(total - rawPayment);
+          showToast(
+            'Valor recebido insuficiente!',
+            `Faltam ${formatCurrency(missing)} para cobrir o total de ${formatCurrency(total)}.`
+          );
+          return;
+        }
+
+        const paymentGiven = rawPayment > 0 ? rawPayment : total;
+        const changeGiven = roundCurrency(Math.max(0, paymentGiven - total));
+
+        const saleRecord = {
+          saleId: 'sale_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+          timestamp: new Date().toISOString(),
+          total,
+          paymentGiven,
+          changeGiven,
+          items: StateManager.cart.map((item) => ({
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            qty: item.qty
+          }))
+        };
+
+        const updatedSales = [...StateManager.sales, saleRecord];
+        StateManager.saveSales(updatedSales);
+
+        const subtitleMsg =
+          changeGiven > 0
+            ? `Total: ${formatCurrency(total)} • Troco a devolver: ${formatCurrency(changeGiven)}`
+            : `Total cobrado: ${formatCurrency(total)}`;
+
+        StateManager.resetCartAndPayment();
+        renderProductGrid();
+        renderCart();
+        renderNavigation();
+
+        showToast('Venda registada com sucesso!', subtitleMsg);
+      }
+
+      function setupDialogLightDismissFallback() {
+        if (!('closedBy' in HTMLDialogElement.prototype)) {
+          const outside = (e, dialog) => {
+            const r = dialog.getBoundingClientRect();
+            return (
+              e.clientX < r.left ||
+              e.clientX > r.right ||
+              e.clientY < r.top ||
+              e.clientY > r.bottom
+            );
+          };
+          for (const dialog of document.querySelectorAll('dialog[closedby="any"]')) {
+            let pressedOutside = false;
+            dialog.addEventListener('pointerdown', (e) => {
+              pressedOutside = outside(e, dialog);
+            });
+            dialog.addEventListener('pointerup', (e) => {
+              if (pressedOutside && outside(e, dialog)) dialog.close();
+            });
+          }
+        }
+      }
+
+      // ==========================================
+      // 6. EVENT LISTENERS & INITIALIZATION
+      // ==========================================
+      function bindEvents() {
+        // Top navigation bar tab switching
+        document.querySelectorAll('.nav-tab').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const targetView = btn.getAttribute('data-view');
+            if (targetView) {
+              StateManager.activeView = targetView;
+              renderNavigation();
+            }
+          });
+        });
+
+        // Category filter pill switching
+        const categoryContainer = document.getElementById('category-filters');
+        if (categoryContainer) {
+          categoryContainer.addEventListener('click', (e) => {
+            const pill = e.target.closest('button[data-category]');
+            if (!pill) return;
+            const selectedCategory = pill.getAttribute('data-category');
+            if (selectedCategory) {
+              StateManager.activeCategory = selectedCategory;
+              renderCategoryFilters();
+              renderProductGrid();
+              pill.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+            }
+          });
+        }
+
+        // Product Grid tap: add product OR open "+ Valor Livre" modal
+        const productGrid = document.getElementById('product-grid');
+        const customDialog = document.getElementById('custom-item-dialog');
+        const customPriceInput = document.getElementById('custom-item-price');
+        const customDescInput = document.getElementById('custom-item-desc');
+        const customPriceError = document.getElementById('custom-price-error');
+
+        if (productGrid) {
+          productGrid.addEventListener('click', (e) => {
+            const customTrigger = e.target.closest('button[data-action="open-custom-item"]');
+            if (customTrigger && customDialog) {
+              if (customPriceInput) customPriceInput.value = '';
+              if (customDescInput) customDescInput.value = '';
+              if (customPriceError) customPriceError.classList.add('hidden');
+              customDialog.showModal();
+              return;
+            }
+
+            const card = e.target.closest('button[data-product-id]');
+            if (!card) return;
+            const productId = card.getAttribute('data-product-id');
+            const product = StateManager.products.find((p) => p.id === productId);
+            if (!product) return;
+
+            StateManager.addToCart(product);
+            renderProductGrid();
+            renderCart();
+
+            // Re-apply subtle visual pulse animation to the tapped card
+            const updatedCard = productGrid.querySelector(
+              `button[data-product-id="${CSS.escape(productId)}"]`
+            );
+            if (updatedCard) {
+              updatedCard.classList.remove('animate-card-pulse');
+              void updatedCard.offsetWidth;
+              updatedCard.classList.add('animate-card-pulse');
+            }
+          });
+        }
+
+        // "+ Valor Livre" Modal Events
+        const customForm = document.getElementById('custom-item-form');
+        const closeCustomBtn = document.getElementById('close-custom-dialog-btn');
+        const cancelCustomBtn = document.getElementById('cancel-custom-item-btn');
+
+        document.querySelectorAll('.preset-price-btn').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const val = btn.getAttribute('data-preset-price');
+            if (customPriceInput && val) {
+              customPriceInput.value = val;
+              if (customPriceError) customPriceError.classList.add('hidden');
+              customPriceInput.removeAttribute('aria-invalid');
+            }
+          });
+        });
+
+        if (customPriceInput) {
+          customPriceInput.addEventListener('input', () => {
+            if (customPriceError) customPriceError.classList.add('hidden');
+            customPriceInput.removeAttribute('aria-invalid');
+          });
+        }
+
+        if (closeCustomBtn && customDialog) {
+          closeCustomBtn.addEventListener('click', () => customDialog.close());
+        }
+        if (cancelCustomBtn && customDialog) {
+          cancelCustomBtn.addEventListener('click', () => customDialog.close());
+        }
+
+        if (customForm && customDialog) {
+          customForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const rawPrice = customPriceInput ? Number(customPriceInput.value) : 0;
+            if (!rawPrice || Number.isNaN(rawPrice) || rawPrice <= 0) {
+              if (customPriceError) customPriceError.classList.remove('hidden');
+              if (customPriceInput) {
+                customPriceInput.setAttribute('aria-invalid', 'true');
+                customPriceInput.focus();
+              }
+              return;
+            }
+
+            const description =
+              customDescInput && customDescInput.value.trim()
+                ? customDescInput.value.trim()
+                : 'Item Diverso';
+
+            StateManager.addToCart({
+              id: 'custom_' + Date.now(),
+              name: description,
+              price: roundCurrency(rawPrice),
+              emoji: '🏷️'
+            });
+
+            customDialog.close();
+            renderCart();
+          });
+        }
+
+        // Basket [ - ] and [ + ] stepper buttons
+        const cartItemsContainer = document.getElementById('cart-items-container');
+        if (cartItemsContainer) {
+          cartItemsContainer.addEventListener('click', (e) => {
+            const btn = e.target.closest('button[data-cart-index]');
+            if (!btn) return;
+            const index = Number(btn.getAttribute('data-cart-index'));
+            const delta = Number(btn.getAttribute('data-qty-delta'));
+            if (!Number.isNaN(index) && !Number.isNaN(delta)) {
+              StateManager.updateCartQty(index, delta);
+              renderProductGrid();
+              renderCart();
+            }
+          });
+        }
+
+        // Quick Change Calculator Bill Buttons
+        const billGroup = document.getElementById('bill-buttons-group');
+        const customCashInput = document.getElementById('custom-cash-input');
+        const clearPaymentBtn = document.getElementById('clear-payment-btn');
+
+        if (billGroup) {
+          billGroup.addEventListener('click', (e) => {
+            const billBtn = e.target.closest('button[data-bill]');
+            if (!billBtn) return;
+            const amount = Number(billBtn.getAttribute('data-bill'));
+            if (StateManager.selectedBill === amount && StateManager.customCashInput === '') {
+              StateManager.selectedBill = null;
+            } else {
+              StateManager.selectedBill = amount;
+            }
+            StateManager.customCashInput = '';
+            if (customCashInput) customCashInput.value = '';
+            renderChangeCalculator();
+          });
+        }
+
+        if (customCashInput) {
+          customCashInput.addEventListener('input', () => {
+            StateManager.customCashInput = customCashInput.value.trim();
+            if (StateManager.customCashInput !== '') {
+              StateManager.selectedBill = null;
+            }
+            renderChangeCalculator();
+          });
+        }
+
+        if (clearPaymentBtn) {
+          clearPaymentBtn.addEventListener('click', () => {
+            StateManager.selectedBill = null;
+            StateManager.customCashInput = '';
+            if (customCashInput) customCashInput.value = '';
+            renderChangeCalculator();
+          });
+        }
+
+        // Clear Basket Button + Confirmation Modal
+        const clearCartBtn = document.getElementById('clear-cart-btn');
+        const confirmClearDialog = document.getElementById('confirm-clear-dialog');
+
+        if (clearCartBtn && confirmClearDialog) {
+          clearCartBtn.addEventListener('click', () => {
+            if (StateManager.cart.length === 0) {
+              StateManager.resetCartAndPayment();
+              renderChangeCalculator();
+              return;
+            }
+            confirmClearDialog.returnValue = '';
+            confirmClearDialog.showModal();
+          });
+
+          confirmClearDialog.addEventListener('close', () => {
+            if (confirmClearDialog.returnValue === 'confirm') {
+              StateManager.resetCartAndPayment();
+              renderProductGrid();
+              renderCart();
+              showToast('Pedido limpo', 'O cesto foi esvaziado.');
+            }
+            confirmClearDialog.returnValue = '';
+          });
+        }
+
+        // FINALIZAR VENDA Button
+        const checkoutBtn = document.getElementById('checkout-btn');
+        if (checkoutBtn) {
+          checkoutBtn.addEventListener('click', handleFinalizeSale);
+        }
+
+        // Mobile floating bar scroll to basket
+        const mobileScrollBtn = document.getElementById('mobile-scroll-basket-btn');
+        const basketPanel = document.getElementById('basket-panel');
+        if (mobileScrollBtn && basketPanel) {
+          mobileScrollBtn.addEventListener('click', () => {
+            basketPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          });
+        }
+
+        setupDialogLightDismissFallback();
+      }
+
+      function bootstrap() {
+        StateManager.init();
+        renderNavigation();
+        renderCategoryFilters();
+        renderProductGrid();
+        renderCart();
+        bindEvents();
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', bootstrap);
+      } else {
+        bootstrap();
+      }
+    })();
+  </script>
+</body>
+</html>
