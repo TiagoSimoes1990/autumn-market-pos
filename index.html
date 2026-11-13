@@ -61,10 +61,25 @@
       min-inline-size: var(--target-size);
     }
 
-    /* Compact quantity stepper buttons still strictly >= 48x48px (>= 44px WCAG 2.5.5) */
-    .qty-btn {
+    /* Compact quantity stepper, emoji picker & row action buttons still strictly >= 48x48px (>= 44px WCAG 2.5.5) */
+    .qty-btn,
+    .emoji-pick-btn,
+    .row-action-btn {
       min-block-size: 48px;
       min-inline-size: 48px;
+    }
+
+    /* Visually hidden utility for accessible radio pills and captions (preserves accessibility tree) */
+    .visually-hidden {
+      position: absolute;
+      clip-path: inset(50%);
+      overflow: hidden;
+      width: 1px;
+      height: 1px;
+      margin: -1px;
+      padding: 0;
+      border: 0;
+      white-space: nowrap;
     }
 
     /* Prevent iOS/Android auto-zoom on form fields */
@@ -91,7 +106,8 @@
     /* Accessible active tab indicator using border on pseudo-element (survives forced-colors mode) */
     .nav-tab,
     .category-pill,
-    .bill-btn {
+    .bill-btn,
+    .emoji-pick-btn {
       position: relative;
     }
 
@@ -104,12 +120,34 @@
     }
 
     .category-pill[aria-pressed="true"]::after,
-    .bill-btn[aria-pressed="true"]::after {
+    .bill-btn[aria-pressed="true"]::after,
+    .emoji-pick-btn[aria-pressed="true"]::after {
       content: "";
       position: absolute;
-      inset: auto 0.65rem 0.2rem;
+      inset: auto 0.5rem 0.15rem;
       border-block-end: 3px solid currentColor;
       border-radius: 9999px;
+    }
+
+    /* Radio pill checked & focus-visible styling */
+    .cat-radio-input:checked + .cat-radio-label {
+      background-color: #d97706;
+      color: #ffffff;
+      border-color: #9a3412;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    }
+
+    .cat-radio-input:checked + .cat-radio-label::after {
+      content: "";
+      position: absolute;
+      inset: auto 0.75rem 0.2rem;
+      border-block-end: 3px solid currentColor;
+      border-radius: 9999px;
+    }
+
+    .cat-radio-input:focus-visible + .cat-radio-label {
+      outline: 3px solid #ea580c;
+      outline-offset: 2px;
     }
 
     /* Container query setup for the Product Grid so it adapts to its own column width */
@@ -135,6 +173,33 @@
         grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 1rem;
       }
+    }
+
+    /* Responsive Data Table with Sticky Headers (Phase 4) */
+    .table-wrapper {
+      overflow: auto;
+      max-inline-size: 100%;
+      max-block-size: min(460px, 70vh);
+      container-type: inline-size;
+    }
+
+    .breakdown-table {
+      border-collapse: separate;
+      border-spacing: 0;
+      width: 100%;
+    }
+
+    .breakdown-table thead {
+      position: sticky;
+      inset-block-start: 0;
+      z-index: 2;
+    }
+
+    .breakdown-table tbody th {
+      position: sticky;
+      inset-inline-start: 0;
+      z-index: 1;
+      background-color: #ffffff;
     }
 
     /* Subtle visual pulse animation when a product card is tapped */
@@ -254,7 +319,9 @@
   <!-- Main Workspace -->
   <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-4 lg:p-6">
 
-    <!-- VIEW 1: 🛒 CAIXA (Register View - Active by default) -->
+    <!-- ========================================================== -->
+    <!-- VIEW 1: 🛒 CAIXA (Register View - Active by default)       -->
+    <!-- ========================================================== -->
     <section id="view-register" aria-labelledby="tab-btn-register">
       <div class="grid grid-cols-1 md:grid-cols-12 gap-4 lg:gap-6 items-start">
 
@@ -407,7 +474,7 @@
                   step="0.01"
                   min="0"
                   placeholder="0,00"
-                   enterkeyhint="done"
+                  enterkeyhint="done"
                   class="w-full rounded-xl border-2 border-slate-300 bg-white px-3 py-2 pr-8 font-bold text-slate-900 focus:border-amber-600 focus:outline-none"
                 />
                 <span class="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-slate-500 pointer-events-none">€</span>
@@ -454,25 +521,447 @@
       </div>
     </section>
 
-    <!-- VIEW 2: 📦 PRODUTOS (Inventory Manager View - Phase 3) -->
+    <!-- ========================================================== -->
+    <!-- VIEW 2: 📦 PRODUTOS (Dynamic Inventory Manager - Phase 3)  -->
+    <!-- ========================================================== -->
     <section id="view-products" aria-labelledby="tab-btn-products" hidden>
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 text-center">
-        <span class="text-5xl block mb-3" aria-hidden="true">📦</span>
-        <h2 class="text-xl font-extrabold text-slate-800 mb-2">Gestão de Produtos</h2>
-        <p class="text-slate-600 max-w-md mx-auto">
-          O gestor de catálogo (<strong id="products-count-badge">0</strong> produtos guardados localmente) será implementado na Fase 3.
-        </p>
+      <div class="max-w-4xl mx-auto flex flex-col gap-6">
+
+        <!-- 1. Add / Edit Product Form Card -->
+        <div
+          id="product-form-card"
+          class="bg-white rounded-2xl shadow-md border-2 border-amber-300/90 p-4 sm:p-6 transition-all"
+        >
+          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3 mb-4">
+            <div class="flex items-center gap-2.5">
+              <span id="product-form-icon" class="text-2xl leading-none" aria-hidden="true">➕</span>
+              <div>
+                <h2 id="product-form-heading" class="text-lg sm:text-xl font-extrabold text-slate-900">
+                  Adicionar Novo Produto
+                </h2>
+                <p id="product-form-subtitle" class="text-xs sm:text-sm text-slate-500">
+                  Adicione bens doados ou ajuste preços a qualquer momento.
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              id="cancel-edit-product-btn"
+              class="hidden rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-sm px-3.5 py-2 transition-all active:scale-95"
+              style="min-block-size: 44px; min-inline-size: auto;"
+            >
+              ✕ Cancelar Edição
+            </button>
+          </div>
+
+          <form id="product-manager-form" aria-labelledby="product-form-heading" class="flex flex-col gap-4" novalidate>
+            <input type="hidden" id="prod-input-id" name="product_id" value="" />
+
+            <!-- Row 1: Nome do Produto & Preço em € -->
+            <div class="grid grid-cols-1 sm:grid-cols-12 gap-4">
+              <div class="sm:col-span-8">
+                <label for="prod-input-name" class="block text-sm font-extrabold text-slate-800 mb-1">
+                  Nome do Produto <span class="text-red-600" aria-hidden="true">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="prod-input-name"
+                  name="product_name"
+                  required
+                  maxlength="60"
+                  placeholder="Ex: Quiche de Legumes, Bolo de Maçã..."
+                  enterkeyhint="next"
+                  aria-describedby="prod-name-error"
+                  class="w-full rounded-xl border-2 border-slate-300 bg-white px-3.5 py-2.5 font-bold text-slate-900 focus:border-amber-600 focus:outline-none"
+                />
+                <p id="prod-name-error" class="text-xs font-bold text-red-600 mt-1 hidden">
+                  Por favor, indique o nome do produto.
+                </p>
+              </div>
+
+              <div class="sm:col-span-4">
+                <label for="prod-input-price" class="block text-sm font-extrabold text-slate-800 mb-1">
+                  Preço em € <span class="text-red-600" aria-hidden="true">*</span>
+                </label>
+                <div class="relative">
+                  <input
+                    type="number"
+                    id="prod-input-price"
+                    name="product_price"
+                    inputmode="decimal"
+                    step="0.10"
+                    min="0.01"
+                    required
+                    placeholder="1,50"
+                  enterkeyhint="done"
+                    aria-describedby="prod-price-error"
+                    class="w-full rounded-xl border-2 border-slate-300 bg-white px-3.5 py-2.5 pr-9 font-extrabold text-slate-900 focus:border-amber-600 focus:outline-none"
+                  />
+                  <span class="absolute right-3.5 top-1/2 -translate-y-1/2 font-extrabold text-slate-500 pointer-events-none">€</span>
+                </div>
+                <p id="prod-price-error" class="text-xs font-bold text-red-600 mt-1 hidden">
+                  Indique um preço válido superior a 0,00 €.
+                </p>
+              </div>
+            </div>
+
+            <!-- Row 2: Categoria (4 Visible Accessible Radio Pills) -->
+            <fieldset class="border-0 p-0 m-0">
+              <legend class="block text-sm font-extrabold text-slate-800 mb-1.5">
+                Categoria <span class="text-red-600" aria-hidden="true">*</span>
+              </legend>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <div>
+                  <input
+                    type="radio"
+                    id="cat-radio-comida"
+                    name="product_category"
+                    value="Comida"
+                    checked
+                    class="visually-hidden cat-radio-input"
+                  />
+                  <label
+                    for="cat-radio-comida"
+                    class="cat-radio-label relative cursor-pointer w-full min-h-[56px] rounded-xl border-2 border-slate-300 bg-slate-50 hover:bg-amber-50 font-extrabold text-sm sm:text-base text-slate-800 flex items-center justify-center gap-2 px-3 py-2.5 transition-all select-none"
+                  >
+                    <span class="text-xl leading-none" aria-hidden="true">🍲</span>
+                    <span>Comida</span>
+                  </label>
+                </div>
+
+                <div>
+                  <input
+                    type="radio"
+                    id="cat-radio-bebidas"
+                    name="product_category"
+                    value="Bebidas"
+                    class="visually-hidden cat-radio-input"
+                  />
+                  <label
+                    for="cat-radio-bebidas"
+                    class="cat-radio-label relative cursor-pointer w-full min-h-[56px] rounded-xl border-2 border-slate-300 bg-slate-50 hover:bg-amber-50 font-extrabold text-sm sm:text-base text-slate-800 flex items-center justify-center gap-2 px-3 py-2.5 transition-all select-none"
+                  >
+                    <span class="text-xl leading-none" aria-hidden="true">🧃</span>
+                    <span>Bebidas</span>
+                  </label>
+                </div>
+
+                <div>
+                  <input
+                    type="radio"
+                    id="cat-radio-fruta"
+                    name="product_category"
+                    value="Fruta"
+                    class="visually-hidden cat-radio-input"
+                  />
+                  <label
+                    for="cat-radio-fruta"
+                    class="cat-radio-label relative cursor-pointer w-full min-h-[56px] rounded-xl border-2 border-slate-300 bg-slate-50 hover:bg-amber-50 font-extrabold text-sm sm:text-base text-slate-800 flex items-center justify-center gap-2 px-3 py-2.5 transition-all select-none"
+                  >
+                    <span class="text-xl leading-none" aria-hidden="true">🍎</span>
+                    <span>Fruta</span>
+                  </label>
+                </div>
+
+                <div>
+                  <input
+                    type="radio"
+                    id="cat-radio-outros"
+                    name="product_category"
+                    value="Outros"
+                    class="visually-hidden cat-radio-input"
+                  />
+                  <label
+                    for="cat-radio-outros"
+                    class="cat-radio-label relative cursor-pointer w-full min-h-[56px] rounded-xl border-2 border-slate-300 bg-slate-50 hover:bg-amber-50 font-extrabold text-sm sm:text-base text-slate-800 flex items-center justify-center gap-2 px-3 py-2.5 transition-all select-none"
+                  >
+                    <span class="text-xl leading-none" aria-hidden="true">🍯</span>
+                    <span>Outros</span>
+                  </label>
+                </div>
+              </div>
+            </fieldset>
+
+            <!-- Row 3: Emoji Picker (12 Quick-Tap Emojis + Custom Emoji Input) -->
+            <div>
+              <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+                <label for="prod-input-emoji" class="text-sm font-extrabold text-slate-800">
+                  Emoji do Produto
+                </label>
+                <span class="text-xs font-medium text-slate-500">
+                  Toque num ícone abaixo ou escreva qualquer emoji
+                </span>
+              </div>
+
+              <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                <div
+                  id="emoji-picker-grid"
+                  role="group"
+                  aria-label="Escolher emoji rápido"
+                  class="grid grid-cols-6 sm:grid-cols-12 gap-1.5 flex-1"
+                >
+                  <!-- Populated dynamically by JS -->
+                </div>
+
+                <div class="flex items-center gap-2 sm:w-40 shrink-0">
+                  <input
+                    type="text"
+                    id="prod-input-emoji"
+                    name="product_emoji"
+                    value="🌰"
+                    maxlength="8"
+                    aria-label="Emoji personalizado"
+                    class="w-full rounded-xl border-2 border-amber-400 bg-amber-50/50 px-3 py-2 text-center text-2xl font-bold focus:border-amber-600 focus:outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- Row 4: Submit Button ("Guardar Produto") -->
+            <div class="pt-1 flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2.5">
+              <button
+                type="submit"
+                id="save-product-btn"
+                class="w-full sm:w-auto min-w-[14rem] rounded-xl font-black text-base sm:text-lg bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white shadow-md border-2 border-emerald-700 px-6 py-3.5 flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
+              >
+                <span aria-hidden="true">💾</span>
+                <span id="save-product-btn-text">Guardar Produto</span>
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- 2. Existing Products List Grouped by Category -->
+        <div class="flex flex-col gap-4">
+          <div class="flex items-center justify-between px-1">
+            <h3 class="text-lg font-extrabold text-slate-900 flex items-center gap-2">
+              <span aria-hidden="true">📋</span>
+              <span>Catálogo Atual</span>
+              <span
+                id="products-count-badge"
+                class="px-2.5 py-0.5 text-xs font-extrabold rounded-full bg-amber-200 text-amber-950"
+              >
+                0
+              </span>
+            </h3>
+          </div>
+
+          <div id="inventory-list-container" class="flex flex-col gap-4">
+            <!-- Populated dynamically by JS grouped by category -->
+          </div>
+        </div>
+
+        <!-- 3. Restore Initial Products Footer -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div>
+            <h3 class="font-extrabold text-slate-800 text-base">Repor Catálogo Predefinido</h3>
+            <p class="text-xs sm:text-sm text-slate-500">
+              Restaura os 9 produtos originais da Feira de Outono (Castanhas, Bolo, Pão com Chouriço, Sopa, etc.).
+            </p>
+          </div>
+          <button
+            type="button"
+            id="restore-defaults-btn"
+            class="w-full sm:w-auto shrink-0 rounded-xl font-extrabold text-sm sm:text-base bg-amber-100 hover:bg-amber-200 text-amber-950 border-2 border-amber-300 px-4 py-3 flex items-center justify-center gap-2 active:scale-95 transition-all"
+          >
+            <span aria-hidden="true">🔄</span>
+            <span>Repor Produtos Iniciais</span>
+          </button>
+        </div>
+
       </div>
     </section>
 
-    <!-- VIEW 3: 📊 FECHO DE CAIXA (End-of-Day Report View - Phase 4) -->
+    <!-- ========================================================== -->
+    <!-- VIEW 3: 📊 FECHO DE CAIXA (End-of-Day Report - Phase 4)    -->
+    <!-- ========================================================== -->
     <section id="view-report" aria-labelledby="tab-btn-report" hidden>
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 text-center">
-        <span class="text-5xl block mb-3" aria-hidden="true">📊</span>
-        <h2 class="text-xl font-extrabold text-slate-800 mb-2">Fecho de Caixa e Relatório do Dia</h2>
-        <p class="text-slate-600 max-w-md mx-auto">
-          O resumo de vendas (<strong id="sales-count-badge">0</strong> vendas registadas), total apurado e contagem por artigo será implementado na Fase 4.
-        </p>
+      <div class="max-w-5xl mx-auto flex flex-col gap-6">
+
+        <!-- 1. Top Summary KPI Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5 sm:gap-4">
+          <!-- KPI 1: Receita Total -->
+          <div class="bg-white rounded-2xl shadow-md border-2 border-emerald-500/80 p-4 sm:p-5 flex flex-col justify-between">
+            <div class="flex items-center justify-between gap-2 mb-2">
+              <span class="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-slate-600">
+                Receita Total
+              </span>
+              <span class="text-2xl leading-none" aria-hidden="true">💶</span>
+            </div>
+            <p id="kpi-total-revenue" class="text-3xl sm:text-4xl font-black text-emerald-700 tracking-tight">
+              0,00 €
+            </p>
+            <p class="text-xs font-semibold text-emerald-800 mt-1">
+              Lucro total apurado em caixa
+            </p>
+          </div>
+
+          <!-- KPI 2: Total de Vendas -->
+          <div class="bg-white rounded-2xl shadow-sm border-2 border-slate-200 p-4 sm:p-5 flex flex-col justify-between">
+            <div class="flex items-center justify-between gap-2 mb-2">
+              <span class="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-slate-600">
+                Total de Vendas
+              </span>
+              <span class="text-2xl leading-none" aria-hidden="true">🧾</span>
+            </div>
+            <p id="kpi-total-sales" class="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+              0
+            </p>
+            <p class="text-xs font-semibold text-slate-500 mt-1">
+              Transações concluídas
+            </p>
+          </div>
+
+          <!-- KPI 3: Artigos Vendidos -->
+          <div class="bg-white rounded-2xl shadow-sm border-2 border-slate-200 p-4 sm:p-5 flex flex-col justify-between">
+            <div class="flex items-center justify-between gap-2 mb-2">
+              <span class="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-slate-600">
+                Artigos Vendidos
+              </span>
+              <span class="text-2xl leading-none" aria-hidden="true">🌰</span>
+            </div>
+            <p id="kpi-total-items" class="text-3xl sm:text-4xl font-black text-amber-700 tracking-tight">
+              0
+            </p>
+            <p class="text-xs font-semibold text-slate-500 mt-1">
+              Unidades individuais entregues
+            </p>
+          </div>
+        </div>
+
+        <!-- Export Quick Actions Bar -->
+        <div class="bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 rounded-2xl p-4 sm:p-5 border-2 border-amber-300/90 shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div>
+            <h2 class="text-base sm:text-lg font-extrabold text-slate-900 flex items-center gap-2">
+              <span aria-hidden="true">📤</span>
+              <span>Partilhar e Exportar Relatório</span>
+            </h2>
+            <p class="text-xs sm:text-sm text-slate-600">
+              Copie o resumo formatado para o grupo de WhatsApp ou descarregue a folha Excel (CSV).
+            </p>
+          </div>
+
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 shrink-0">
+            <button
+              type="button"
+              id="copy-whatsapp-btn"
+              class="rounded-xl font-extrabold text-sm sm:text-base bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white shadow-sm border-2 border-emerald-700 px-4 py-3 inline-flex items-center justify-center gap-2 active:scale-95 transition-all"
+            >
+              <span class="text-xl leading-none" aria-hidden="true">📱</span>
+              <span>Copiar Resumo para WhatsApp</span>
+            </button>
+
+            <button
+              type="button"
+              id="export-csv-btn"
+              class="rounded-xl font-extrabold text-sm sm:text-base bg-white hover:bg-amber-100 text-slate-900 border-2 border-amber-400 px-4 py-3 inline-flex items-center justify-center gap-2 active:scale-95 transition-all shadow-sm"
+            >
+              <span class="text-xl leading-none" aria-hidden="true">📥</span>
+              <span>Exportar CSV (Excel)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 2. "Resumo por Produto" (Itemized Breakdown Table) -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="px-4 sm:px-6 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2 bg-slate-50/70">
+            <div class="flex items-center gap-2">
+              <span class="text-2xl leading-none" aria-hidden="true">🏆</span>
+              <h3 id="breakdown-table-heading" class="text-lg font-extrabold text-slate-900">
+                Resumo por Produto
+              </h3>
+            </div>
+            <span class="text-xs font-bold text-slate-500">
+              Ordenado por maior receita (€)
+            </span>
+          </div>
+
+          <div id="breakdown-empty-state" class="p-8 text-center hidden">
+            <span class="text-4xl block mb-2" aria-hidden="true">📉</span>
+            <p class="font-bold text-slate-700 text-base">Ainda não existem vendas registadas</p>
+            <p class="text-xs sm:text-sm text-slate-500 mt-1">
+              Assim que finalizar vendas no separador "🛒 Caixa", a contagem por produto aparecerá aqui.
+            </p>
+          </div>
+
+          <div
+            id="breakdown-table-region"
+            tabindex="0"
+            role="region"
+            aria-labelledby="breakdown-table-heading"
+            class="table-wrapper"
+          >
+            <table class="breakdown-table text-left">
+              <caption class="visually-hidden">
+                Tabela de resumo de vendas por produto ordenada por receita total
+              </caption>
+              <thead>
+                <tr class="bg-slate-100 text-slate-700 border-b border-slate-200 text-xs sm:text-sm font-extrabold uppercase tracking-wider">
+                  <th scope="col" class="py-3.5 px-4 sm:px-6 bg-slate-100">Produto</th>
+                  <th scope="col" class="py-3.5 px-4 text-center bg-slate-100">Qtd. Vendida</th>
+                  <th scope="col" class="py-3.5 px-4 sm:px-6 text-right bg-slate-100">Total (€)</th>
+                </tr>
+              </thead>
+              <tbody id="breakdown-table-body" class="divide-y divide-slate-200/80 text-sm sm:text-base">
+                <!-- Populated dynamically by JS -->
+              </tbody>
+              <tfoot id="breakdown-table-foot" class="bg-amber-50/90 border-t-2 border-amber-300 font-black text-slate-900 text-sm sm:text-base">
+                <!-- Populated dynamically by JS -->
+              </tfoot>
+            </table>
+          </div>
+        </div>
+
+        <!-- 3. "Histórico de Vendas" (Recent Sales Log & Mistake Recovery) -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="px-4 sm:px-6 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2 bg-slate-50/70">
+            <div class="flex items-center gap-2">
+              <span class="text-2xl leading-none" aria-hidden="true">🕒</span>
+              <div>
+                <h3 class="text-lg font-extrabold text-slate-900">Histórico de Vendas</h3>
+                <p class="text-xs text-slate-500">
+                  Da mais recente para a mais antiga • Pode anular vendas registadas por engano
+                </p>
+              </div>
+            </div>
+            <span
+              id="sales-count-badge"
+              class="px-3 py-1 rounded-full text-xs font-extrabold bg-amber-100 text-amber-950 border border-amber-300"
+            >
+              0 vendas
+            </span>
+          </div>
+
+          <div
+            id="sales-history-container"
+            class="divide-y divide-slate-200/80 max-h-[520px] overflow-y-auto"
+          >
+            <!-- Populated dynamically by JS -->
+          </div>
+        </div>
+
+        <!-- 4. Danger Zone: Wipe All Sales for a New Day -->
+        <div class="bg-red-50/70 rounded-2xl border-2 border-red-200 p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <h3 class="text-base sm:text-lg font-extrabold text-red-950 flex items-center gap-2">
+              <span aria-hidden="true">⚠️</span>
+              <span>Zona de Perigo — Novo Dia de Feira</span>
+            </h3>
+            <p class="text-xs sm:text-sm text-red-900/80 mt-0.5">
+              Apaga todas as vendas registadas e repõe os contadores a zero. Os produtos do catálogo são mantidos.
+            </p>
+          </div>
+          <button
+            type="button"
+            id="wipe-all-sales-btn"
+            class="w-full sm:w-auto shrink-0 rounded-xl font-extrabold text-sm sm:text-base bg-red-600 hover:bg-red-700 active:bg-red-800 text-white border-2 border-red-800 px-5 py-3 inline-flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-all"
+          >
+            <span aria-hidden="true">⚠️</span>
+            <span>Limpar Todas as Vendas (Novo Dia)</span>
+          </button>
+        </div>
+
       </div>
     </section>
 
@@ -531,7 +1020,6 @@
         <label for="custom-item-price" class="block text-sm font-extrabold text-slate-800 mb-1">
           Preço (€) <span class="text-red-600" aria-hidden="true">*</span>
         </label>
-        <!-- Quick Preset Price Chips for Fast Touch Entry -->
         <div class="grid grid-cols-4 gap-1.5 mb-2.5" role="group" aria-label="Preços rápidos">
           <button type="button" data-preset-price="0.50" class="preset-price-btn rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-300 font-bold text-sm text-amber-950 py-1.5" style="min-block-size: 44px; min-inline-size: 0;">0,50 €</button>
           <button type="button" data-preset-price="1.00" class="preset-price-btn rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-300 font-bold text-sm text-amber-950 py-1.5" style="min-block-size: 44px; min-inline-size: 0;">1,00 €</button>
@@ -625,6 +1113,180 @@
     </div>
   </dialog>
 
+  <!-- MODAL 3: Delete Single Product Confirmation -->
+  <dialog
+    id="confirm-delete-product-dialog"
+    closedby="any"
+    aria-labelledby="confirm-delete-product-title"
+    class="w-[min(92vw,25rem)] rounded-2xl bg-white p-5 shadow-2xl border-2 border-slate-300 text-slate-900"
+  >
+    <div class="flex flex-col items-center text-center gap-3">
+      <span class="text-4xl leading-none" aria-hidden="true">⚠️</span>
+      <h2 id="confirm-delete-product-title" class="text-lg font-extrabold text-slate-900">
+        Apagar produto?
+      </h2>
+      <p id="confirm-delete-product-desc" class="text-sm text-slate-600">
+        Este produto será removido do catálogo da caixa.
+      </p>
+      <form method="dialog" class="grid grid-cols-2 gap-2.5 w-full pt-2">
+        <button
+          type="submit"
+          value="cancel"
+          autofocus
+          class="rounded-xl font-bold text-slate-800 bg-slate-100 hover:bg-slate-200 border border-slate-300 px-4 py-3"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          value="confirm"
+          class="rounded-xl font-extrabold text-white bg-red-600 hover:bg-red-700 border border-red-700 px-4 py-3"
+        >
+          Sim, Apagar
+        </button>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- MODAL 4: Restore Default Products Confirmation -->
+  <dialog
+    id="confirm-restore-defaults-dialog"
+    closedby="any"
+    aria-labelledby="confirm-restore-title"
+    class="w-[min(92vw,26rem)] rounded-2xl bg-white p-5 shadow-2xl border-2 border-amber-400 text-slate-900"
+  >
+    <div class="flex flex-col items-center text-center gap-3">
+      <span class="text-4xl leading-none" aria-hidden="true">🔄</span>
+      <h2 id="confirm-restore-title" class="text-lg font-extrabold text-slate-900">
+        Repor Produtos Iniciais?
+      </h2>
+      <p class="text-sm text-slate-600">
+        O catálogo será restaurado para os 9 produtos originais da Feira de Outono. As vendas já registadas não serão afetadas.
+      </p>
+      <form method="dialog" class="grid grid-cols-2 gap-2.5 w-full pt-2">
+        <button
+          type="submit"
+          value="cancel"
+          autofocus
+          class="rounded-xl font-bold text-slate-800 bg-slate-100 hover:bg-slate-200 border border-slate-300 px-4 py-3"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          value="confirm"
+          class="rounded-xl font-extrabold text-white bg-amber-600 hover:bg-amber-700 border border-amber-800 px-4 py-3"
+        >
+          Sim, Repor
+        </button>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- MODAL 5: Void Single Sale Confirmation ("Anular Venda") -->
+  <dialog
+    id="confirm-void-sale-dialog"
+    closedby="any"
+    aria-labelledby="confirm-void-sale-title"
+    class="w-[min(92vw,26rem)] rounded-2xl bg-white p-5 shadow-2xl border-2 border-red-300 text-slate-900"
+  >
+    <div class="flex flex-col items-center text-center gap-3">
+      <span class="text-4xl leading-none" aria-hidden="true">🧾</span>
+      <h2 id="confirm-void-sale-title" class="text-lg font-extrabold text-slate-900">
+        Anular esta venda?
+      </h2>
+      <p id="confirm-void-sale-desc" class="text-sm text-slate-600">
+        A venda será eliminada e o total em caixa será recalculado automaticamente.
+      </p>
+      <form method="dialog" class="grid grid-cols-2 gap-2.5 w-full pt-2">
+        <button
+          type="submit"
+          value="cancel"
+          autofocus
+          class="rounded-xl font-bold text-slate-800 bg-slate-100 hover:bg-slate-200 border border-slate-300 px-4 py-3"
+        >
+          Manter Venda
+        </button>
+        <button
+          type="submit"
+          value="confirm"
+          class="rounded-xl font-extrabold text-white bg-red-600 hover:bg-red-700 border border-red-700 px-4 py-3"
+        >
+          Sim, Anular
+        </button>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- MODAL 6: Wipe All Sales ("Limpar Todas as Vendas - Novo Dia") -->
+  <dialog
+    id="confirm-wipe-sales-dialog"
+    closedby="any"
+    aria-labelledby="confirm-wipe-sales-title"
+    class="w-[min(94vw,28rem)] rounded-2xl bg-white p-0 shadow-2xl border-2 border-red-500 text-slate-900"
+  >
+    <div class="bg-red-700 text-white px-5 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <span class="text-2xl leading-none" aria-hidden="true">⚠️</span>
+        <h2 id="confirm-wipe-sales-title" class="text-lg font-extrabold">Limpar Todas as Vendas</h2>
+      </div>
+      <button
+        type="button"
+        id="close-wipe-dialog-btn"
+        aria-label="Fechar janela"
+        class="rounded-xl bg-black/20 hover:bg-black/35 text-white font-bold px-3 py-1.5 text-lg"
+        style="min-block-size: 44px; min-inline-size: 44px;"
+      >
+        ✕
+      </button>
+    </div>
+
+    <form id="wipe-sales-form" class="p-5 flex flex-col gap-4" novalidate>
+      <p class="text-sm text-slate-700 leading-relaxed">
+        Esta ação vai apagar <strong>todas as vendas registadas</strong> e repor a receita a <strong>0,00 €</strong> para iniciar um novo dia.
+      </p>
+
+      <div>
+        <label for="wipe-confirm-input" class="block text-sm font-extrabold text-slate-900 mb-1.5">
+          Para confirmar, escreva <span class="px-1.5 py-0.5 rounded bg-red-100 text-red-900 font-black">LIMPAR</span> abaixo:
+        </label>
+        <input
+          type="text"
+          id="wipe-confirm-input"
+          name="wipe_confirm"
+          required
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="characters"
+          spellcheck="false"
+          placeholder="Escreva LIMPAR"
+          enterkeyhint="done"
+          aria-describedby="wipe-confirm-error"
+          class="w-full rounded-xl border-2 border-slate-300 px-3.5 py-2.5 font-black text-lg uppercase tracking-wider text-slate-900 focus:border-red-600 focus:outline-none"
+        />
+        <p id="wipe-confirm-error" class="text-xs font-bold text-red-600 mt-1 hidden">
+          Escreva exatamente a palavra LIMPAR para confirmar.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2.5 pt-1">
+        <button
+          type="button"
+          id="cancel-wipe-sales-btn"
+          class="rounded-xl font-bold text-slate-800 bg-slate-100 hover:bg-slate-200 border border-slate-300 px-4 py-3"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          class="rounded-xl font-extrabold text-white bg-red-600 hover:bg-red-700 border border-red-800 px-4 py-3 shadow-md"
+        >
+          Apagar Tudo
+        </button>
+      </div>
+    </form>
+  </dialog>
+
   <!-- Application State & View Engine -->
   <script>
     (function () {
@@ -644,6 +1306,13 @@
         { id: 'Bebidas', label: 'Bebidas', emoji: '🧃' },
         { id: 'Fruta', label: 'Fruta', emoji: '🍎' },
         { id: 'Outros', label: 'Outros', emoji: '🍯' }
+      ];
+
+      const PRODUCT_CATEGORIES = CATEGORIES.filter((c) => c.id !== 'Todos');
+
+      const QUICK_EMOJIS = [
+        '🌰', '🍰', '🥖', '🥣', '🧃', '💧',
+        '☕', '🍎', '🍯', '🥧', '🍪', '🎃'
       ];
 
       const DEFAULT_PRODUCTS = [
@@ -673,11 +1342,11 @@
         sales: [],
         activeView: 'register',
         activeCategory: 'Todos',
-        // Current active cart: Array of { id, name, price, qty, emoji }
         cart: [],
-        // Payment calculator state
         selectedBill: null,
         customCashInput: '',
+        pendingDeleteProductId: null,
+        pendingVoidSaleId: null,
 
         init() {
           this.products = this.loadProducts();
@@ -696,8 +1365,9 @@
           } catch (err) {
             console.error('Erro ao ler produtos do localStorage:', err);
           }
-          this.saveProducts(DEFAULT_PRODUCTS);
-          return [...DEFAULT_PRODUCTS];
+          const initialCopy = DEFAULT_PRODUCTS.map((p) => ({ ...p }));
+          this.saveProducts(initialCopy);
+          return initialCopy;
         },
 
         saveProducts(productsList) {
@@ -732,6 +1402,126 @@
           } catch (err) {
             console.error('Erro ao guardar vendas no localStorage:', err);
           }
+        },
+
+        // Product CRUD Operations
+        upsertProduct(productData) {
+          const cleanName = productData.name.trim();
+          const cleanPrice = roundCurrency(productData.price);
+          const cleanCategory = productData.category || 'Comida';
+          const cleanEmoji = (productData.emoji || '').trim() || '🍂';
+
+          if (productData.id) {
+            const updatedList = this.products.map((p) =>
+              p.id === productData.id
+                ? {
+                    ...p,
+                    name: cleanName,
+                    price: cleanPrice,
+                    category: cleanCategory,
+                    emoji: cleanEmoji
+                  }
+                : p
+            );
+            this.saveProducts(updatedList);
+
+            this.cart.forEach((cartItem) => {
+              if (cartItem.id === productData.id) {
+                cartItem.name = cleanName;
+                cartItem.price = cleanPrice;
+                cartItem.emoji = cleanEmoji;
+              }
+            });
+            return 'updated';
+          } else {
+            const newProduct = {
+              id: 'prod_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+              name: cleanName,
+              price: cleanPrice,
+              category: cleanCategory,
+              emoji: cleanEmoji
+            };
+            this.saveProducts([...this.products, newProduct]);
+            return 'created';
+          }
+        },
+
+        deleteProduct(productId) {
+          const updatedList = this.products.filter((p) => p.id !== productId);
+          this.saveProducts(updatedList);
+        },
+
+        restoreDefaultProducts() {
+          const restored = DEFAULT_PRODUCTS.map((p) => ({ ...p }));
+          this.saveProducts(restored);
+        },
+
+        // Sales Void & Wipe Operations (Phase 4)
+        voidSale(saleId) {
+          const updated = this.sales.filter((s) => s.saleId !== saleId);
+          this.saveSales(updated);
+        },
+
+        wipeAllSales() {
+          this.saveSales([]);
+        },
+
+        // Report Aggregation Helpers (Phase 4)
+        getReportSummary() {
+          let totalRevenue = 0;
+          let totalItemsSold = 0;
+          const byProductMap = new Map();
+
+          // Map product IDs and names to emojis from catalog for rich presentation
+          const emojiById = new Map();
+          const emojiByName = new Map();
+          this.products.forEach((p) => {
+            emojiById.set(p.id, p.emoji);
+            emojiByName.set(p.name.toLowerCase(), p.emoji);
+          });
+
+          this.sales.forEach((sale) => {
+            totalRevenue = roundCurrency(totalRevenue + (Number(sale.total) || 0));
+            const items = Array.isArray(sale.items) ? sale.items : [];
+            items.forEach((item) => {
+              const qty = Number(item.qty) || 0;
+              const price = Number(item.price) || 0;
+              const lineTotal = roundCurrency(qty * price);
+              totalItemsSold += qty;
+
+              const key = (item.name || 'Item Diverso').trim();
+              const existing = byProductMap.get(key);
+              const resolvedEmoji =
+                emojiById.get(item.id) ||
+                emojiByName.get(key.toLowerCase()) ||
+                (String(item.id || '').startsWith('custom_') ? '🏷️' : '🍂');
+
+              if (existing) {
+                existing.qty += qty;
+                existing.total = roundCurrency(existing.total + lineTotal);
+              } else {
+                byProductMap.set(key, {
+                  name: key,
+                  emoji: resolvedEmoji,
+                  qty,
+                  total: lineTotal
+                });
+              }
+            });
+          });
+
+          // Sort by highest revenue descending, then by quantity descending
+          const breakdown = Array.from(byProductMap.values()).sort((a, b) => {
+            if (b.total !== a.total) return b.total - a.total;
+            return b.qty - a.qty;
+          });
+
+          return {
+            totalRevenue,
+            totalSalesCount: this.sales.length,
+            totalItemsSold,
+            breakdown
+          };
         },
 
         // Cart Manipulation Methods
@@ -811,6 +1601,34 @@
         return numeric.toFixed(2).replace('.', ',') + ' €';
       }
 
+      function formatSaleTime(isoString) {
+        try {
+          const date = new Date(isoString);
+          if (Number.isNaN(date.getTime())) return '--:--';
+          return date.toLocaleTimeString('pt-PT', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+          });
+        } catch {
+          return '--:--';
+        }
+      }
+
+      function formatSaleDate(isoString) {
+        try {
+          const date = isoString ? new Date(isoString) : new Date();
+          if (Number.isNaN(date.getTime())) return '';
+          return date.toLocaleDateString('pt-PT', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+          });
+        } catch {
+          return '';
+        }
+      }
+
       function escapeHtml(str) {
         const div = document.createElement('div');
         div.textContent = String(str ?? '');
@@ -879,12 +1697,16 @@
 
         const countBadge = document.getElementById('products-count-badge');
         if (countBadge) {
-          countBadge.textContent = String(StateManager.products.length);
+          countBadge.textContent = `${StateManager.products.length} ${
+            StateManager.products.length === 1 ? 'produto' : 'produtos'
+          }`;
         }
 
         const salesBadge = document.getElementById('sales-count-badge');
         if (salesBadge) {
-          salesBadge.textContent = String(StateManager.sales.length);
+          salesBadge.textContent = `${StateManager.sales.length} ${
+            StateManager.sales.length === 1 ? 'venda' : 'vendas'
+          }`;
         }
       }
 
@@ -981,7 +1803,6 @@
           })
           .join('');
 
-        // Prominent "+ Valor Livre" card always available in the product grid
         const customAmountCardHtml = `
           <button
             type="button"
@@ -1100,7 +1921,6 @@
         const changeLabel = document.getElementById('change-label');
         const changeAmount = document.getElementById('change-amount');
 
-        // Highlight active quick bill button
         document.querySelectorAll('.bill-btn').forEach((btn) => {
           const billVal = Number(btn.getAttribute('data-bill'));
           const isSelected =
@@ -1151,7 +1971,544 @@
       }
 
       // ==========================================
-      // 5. ACTIONS: CHECKOUT & MODALS
+      // 5. PHASE 3: INVENTORY MANAGER RENDERING
+      // ==========================================
+      function renderEmojiPicker() {
+        const grid = document.getElementById('emoji-picker-grid');
+        const emojiInput = document.getElementById('prod-input-emoji');
+        if (!grid) return;
+
+        const currentEmoji = emojiInput ? emojiInput.value.trim() : '🌰';
+
+        grid.innerHTML = QUICK_EMOJIS.map((emoji) => {
+          const isSelected = currentEmoji === emoji;
+          return `
+            <button
+              type="button"
+              data-emoji="${escapeHtml(emoji)}"
+              aria-label="Selecionar emoji ${escapeHtml(emoji)}"
+              aria-pressed="${isSelected ? 'true' : 'false'}"
+              class="emoji-pick-btn rounded-xl text-2xl flex items-center justify-center border-2 transition-all active:scale-95 ${
+                isSelected
+                  ? 'bg-amber-500/20 border-amber-600 text-amber-950 shadow-sm'
+                  : 'bg-slate-50 hover:bg-amber-50 border-slate-200 text-slate-900'
+              }"
+              style="min-inline-size: 0;"
+            >
+              <span aria-hidden="true">${escapeHtml(emoji)}</span>
+            </button>
+          `;
+        }).join('');
+      }
+
+      function renderInventoryList() {
+        const container = document.getElementById('inventory-list-container');
+        const countBadge = document.getElementById('products-count-badge');
+        if (countBadge) {
+          countBadge.textContent = `${StateManager.products.length} ${
+            StateManager.products.length === 1 ? 'produto' : 'produtos'
+          }`;
+        }
+        if (!container) return;
+
+        if (StateManager.products.length === 0) {
+          container.innerHTML = `
+            <div class="bg-white rounded-2xl border border-slate-200 p-8 text-center">
+              <span class="text-4xl block mb-2" aria-hidden="true">📦</span>
+              <p class="font-extrabold text-slate-800 text-lg">Nenhum produto registado</p>
+              <p class="text-sm text-slate-500 mt-1">
+                Utilize o formulário acima para adicionar produtos ou toque em "Repor Produtos Iniciais".
+              </p>
+            </div>
+          `;
+          return;
+        }
+
+        const editingId = document.getElementById('prod-input-id')?.value || '';
+
+        const sectionsHtml = PRODUCT_CATEGORIES.map((cat) => {
+          const items = StateManager.products.filter((p) => p.category === cat.id);
+          if (items.length === 0) return '';
+
+          const badgeStyle = CATEGORY_BADGE_STYLES[cat.id] || CATEGORY_BADGE_STYLES.Outros;
+
+          const rowsHtml = items
+            .map((prod) => {
+              const isBeingEdited = editingId === prod.id;
+              return `
+                <div class="p-3.5 sm:px-5 flex flex-wrap items-center justify-between gap-3 transition-colors ${
+                  isBeingEdited ? 'bg-amber-50/90' : 'hover:bg-slate-50/80'
+                }">
+                  <div class="flex items-center gap-3.5 min-w-0 flex-1">
+                    <span class="text-3xl sm:text-4xl leading-none shrink-0 select-none" aria-hidden="true">
+                      ${escapeHtml(prod.emoji)}
+                    </span>
+                    <div class="min-w-0 flex-1">
+                      <div class="flex flex-wrap items-center gap-2">
+                        <p class="font-extrabold text-slate-900 text-base sm:text-lg leading-snug">
+                          ${escapeHtml(prod.name)}
+                        </p>
+                        ${
+                          isBeingEdited
+                            ? '<span class="px-2 py-0.5 text-xs font-extrabold rounded-md bg-amber-600 text-white">Em edição</span>'
+                            : ''
+                        }
+                      </div>
+                      <p class="text-sm font-black text-amber-800 mt-0.5">
+                        ${formatCurrency(prod.price)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
+                    <button
+                      type="button"
+                      data-edit-product="${escapeHtml(prod.id)}"
+                      class="row-action-btn flex-1 sm:flex-none rounded-xl font-extrabold text-sm bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 px-4 py-2.5 inline-flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+                    >
+                      <span aria-hidden="true">✏️</span>
+                      <span>Editar</span>
+                    </button>
+                    <button
+                      type="button"
+                      data-delete-product="${escapeHtml(prod.id)}"
+                      class="row-action-btn flex-1 sm:flex-none rounded-xl font-extrabold text-sm bg-red-50 hover:bg-red-100 text-red-800 border border-red-200 px-4 py-2.5 inline-flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+                    >
+                      <span aria-hidden="true">🗑️</span>
+                      <span>Apagar</span>
+                    </button>
+                  </div>
+                </div>
+              `;
+            })
+            .join('');
+
+          return `
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+              <div class="bg-slate-50 px-4 sm:px-5 py-3 border-b border-slate-200 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="text-xl leading-none" aria-hidden="true">${escapeHtml(cat.emoji)}</span>
+                  <h4 class="font-extrabold text-slate-900 text-base">${escapeHtml(cat.label)}</h4>
+                </div>
+                <span class="px-2.5 py-0.5 text-xs font-extrabold rounded-full border ${badgeStyle}">
+                  ${items.length} ${items.length === 1 ? 'item' : 'itens'}
+                </span>
+              </div>
+              <div class="divide-y divide-slate-200/80">
+                ${rowsHtml}
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        container.innerHTML = sectionsHtml;
+      }
+
+      function resetProductForm() {
+        const idInput = document.getElementById('prod-input-id');
+        const nameInput = document.getElementById('prod-input-name');
+        const priceInput = document.getElementById('prod-input-price');
+        const emojiInput = document.getElementById('prod-input-emoji');
+        const formHeading = document.getElementById('product-form-heading');
+        const formIcon = document.getElementById('product-form-icon');
+        const saveBtnText = document.getElementById('save-product-btn-text');
+        const cancelEditBtn = document.getElementById('cancel-edit-product-btn');
+        const formCard = document.getElementById('product-form-card');
+        const nameError = document.getElementById('prod-name-error');
+        const priceError = document.getElementById('prod-price-error');
+
+        if (idInput) idInput.value = '';
+        if (nameInput) {
+          nameInput.value = '';
+          nameInput.removeAttribute('aria-invalid');
+        }
+        if (priceInput) {
+          priceInput.value = '';
+          priceInput.removeAttribute('aria-invalid');
+        }
+        if (emojiInput) emojiInput.value = '🌰';
+
+        const defaultCatRadio = document.getElementById('cat-radio-comida');
+        if (defaultCatRadio) defaultCatRadio.checked = true;
+
+        if (formHeading) formHeading.textContent = 'Adicionar Novo Produto';
+        if (formIcon) formIcon.textContent = '➕';
+        if (saveBtnText) saveBtnText.textContent = 'Guardar Produto';
+        if (cancelEditBtn) cancelEditBtn.classList.add('hidden');
+        if (formCard) {
+          formCard.className =
+            'bg-white rounded-2xl shadow-md border-2 border-amber-300/90 p-4 sm:p-6 transition-all';
+        }
+        if (nameError) nameError.classList.add('hidden');
+        if (priceError) priceError.classList.add('hidden');
+
+        renderEmojiPicker();
+        renderInventoryList();
+      }
+
+      function loadProductIntoForm(productId) {
+        const prod = StateManager.products.find((p) => p.id === productId);
+        if (!prod) return;
+
+        const idInput = document.getElementById('prod-input-id');
+        const nameInput = document.getElementById('prod-input-name');
+        const priceInput = document.getElementById('prod-input-price');
+        const emojiInput = document.getElementById('prod-input-emoji');
+        const formHeading = document.getElementById('product-form-heading');
+        const formIcon = document.getElementById('product-form-icon');
+        const saveBtnText = document.getElementById('save-product-btn-text');
+        const cancelEditBtn = document.getElementById('cancel-edit-product-btn');
+        const formCard = document.getElementById('product-form-card');
+        const nameError = document.getElementById('prod-name-error');
+        const priceError = document.getElementById('prod-price-error');
+
+        if (idInput) idInput.value = prod.id;
+        if (nameInput) {
+          nameInput.value = prod.name;
+          nameInput.removeAttribute('aria-invalid');
+        }
+        if (priceInput) {
+          priceInput.value = Number(prod.price).toFixed(2);
+          priceInput.removeAttribute('aria-invalid');
+        }
+        if (emojiInput) emojiInput.value = prod.emoji || '🍂';
+
+        const radioToSelect = document.querySelector(
+          `input[name="product_category"][value="${CSS.escape(prod.category)}"]`
+        );
+        if (radioToSelect) {
+          radioToSelect.checked = true;
+        }
+
+        if (formHeading) formHeading.textContent = `Editar: ${prod.name}`;
+        if (formIcon) formIcon.textContent = '✏️';
+        if (saveBtnText) saveBtnText.textContent = 'Guardar Alterações';
+        if (cancelEditBtn) cancelEditBtn.classList.remove('hidden');
+        if (formCard) {
+          formCard.className =
+            'bg-amber-50/40 rounded-2xl shadow-lg border-2 border-amber-600 p-4 sm:p-6 transition-all';
+          formCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        if (nameError) nameError.classList.add('hidden');
+        if (priceError) priceError.classList.add('hidden');
+
+        renderEmojiPicker();
+        renderInventoryList();
+
+        if (nameInput) {
+          nameInput.focus();
+        }
+      }
+
+      // ==========================================
+      // 6. PHASE 4: END-OF-DAY REPORT RENDERING & EXPORTS
+      // ==========================================
+      function renderReportView() {
+        const summary = StateManager.getReportSummary();
+
+        // 1. Update KPI Cards
+        const revenueEl = document.getElementById('kpi-total-revenue');
+        const salesCountEl = document.getElementById('kpi-total-sales');
+        const itemsCountEl = document.getElementById('kpi-total-items');
+        const salesBadge = document.getElementById('sales-count-badge');
+
+        if (revenueEl) revenueEl.textContent = formatCurrency(summary.totalRevenue);
+        if (salesCountEl) salesCountEl.textContent = String(summary.totalSalesCount);
+        if (itemsCountEl) itemsCountEl.textContent = String(summary.totalItemsSold);
+        if (salesBadge) {
+          salesBadge.textContent = `${summary.totalSalesCount} ${
+            summary.totalSalesCount === 1 ? 'venda' : 'vendas'
+          }`;
+        }
+
+        // 2. Render "Resumo por Produto" Table
+        const emptyState = document.getElementById('breakdown-empty-state');
+        const tableRegion = document.getElementById('breakdown-table-region');
+        const tbody = document.getElementById('breakdown-table-body');
+        const tfoot = document.getElementById('breakdown-table-foot');
+
+        if (summary.breakdown.length === 0) {
+          if (emptyState) emptyState.classList.remove('hidden');
+          if (tableRegion) tableRegion.classList.add('hidden');
+        } else {
+          if (emptyState) emptyState.classList.add('hidden');
+          if (tableRegion) tableRegion.classList.remove('hidden');
+
+          if (tbody) {
+            tbody.innerHTML = summary.breakdown
+              .map((row, idx) => {
+                const rankBadge =
+                  idx === 0
+                    ? '<span class="ml-1.5 px-2 py-0.5 text-xs font-extrabold rounded-full bg-amber-100 text-amber-900 border border-amber-300">1.º</span>'
+                    : '';
+                return `
+                  <tr class="hover:bg-amber-50/40 transition-colors">
+                    <th scope="row" class="py-3.5 px-4 sm:px-6 font-extrabold text-slate-900">
+                      <div class="flex items-center gap-2.5">
+                        <span class="text-2xl leading-none select-none" aria-hidden="true">${escapeHtml(row.emoji)}</span>
+                        <span>${escapeHtml(row.name)}</span>
+                        ${rankBadge}
+                      </div>
+                    </th>
+                    <td class="py-3.5 px-4 text-center">
+                      <span class="inline-flex items-center justify-center px-3 py-1 rounded-full font-extrabold text-sm bg-slate-100 text-slate-900 border border-slate-200">
+                        ${row.qty} un.
+                      </span>
+                    </td>
+                    <td class="py-3.5 px-4 sm:px-6 text-right font-black text-emerald-700">
+                      ${formatCurrency(row.total)}
+                    </td>
+                  </tr>
+                `;
+              })
+              .join('');
+          }
+
+          if (tfoot) {
+            tfoot.innerHTML = `
+              <tr>
+                <th scope="row" class="py-3.5 px-4 sm:px-6 uppercase tracking-wider text-xs sm:text-sm text-amber-950">
+                  Total Geral
+                </th>
+                <td class="py-3.5 px-4 text-center text-amber-950">
+                  ${summary.totalItemsSold} un.
+                </td>
+                <td class="py-3.5 px-4 sm:px-6 text-right text-lg text-emerald-800">
+                  ${formatCurrency(summary.totalRevenue)}
+                </td>
+              </tr>
+            `;
+          }
+        }
+
+        // 3. Render "Histórico de Vendas" (Newest First)
+        const historyContainer = document.getElementById('sales-history-container');
+        if (!historyContainer) return;
+
+        if (StateManager.sales.length === 0) {
+          historyContainer.innerHTML = `
+            <div class="p-8 text-center text-slate-500">
+              <span class="text-4xl block mb-2" aria-hidden="true">🧾</span>
+              <p class="font-bold text-slate-700 text-base">Sem histórico de vendas</p>
+              <p class="text-xs sm:text-sm text-slate-500 mt-1">
+                As vendas finalizadas aparecerão aqui por ordem cronológica inversa.
+              </p>
+            </div>
+          `;
+          return;
+        }
+
+        const reversedSales = [...StateManager.sales].reverse();
+        historyContainer.innerHTML = reversedSales
+          .map((sale, revIdx) => {
+            const saleNumber = StateManager.sales.length - revIdx;
+            const timeStr = formatSaleTime(sale.timestamp);
+            const dateStr = formatSaleDate(sale.timestamp);
+            const itemsList = Array.isArray(sale.items) ? sale.items : [];
+            const itemsSummary = itemsList
+              .map((i) => `${i.qty}× ${i.name}`)
+              .join(', ');
+
+            const paymentInfo =
+              Number(sale.changeGiven) > 0
+                ? `Recebido: ${formatCurrency(sale.paymentGiven)} • Troco: ${formatCurrency(sale.changeGiven)}`
+                : `Pagamento exato (${formatCurrency(sale.total)})`;
+
+            return `
+              <div class="p-4 sm:px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/80 transition-colors">
+                <div class="min-w-0 flex-1">
+                  <div class="flex flex-wrap items-center gap-2 mb-1">
+                    <span class="px-2.5 py-0.5 text-xs font-black rounded-md bg-slate-200 text-slate-800">
+                      Venda #${saleNumber}
+                    </span>
+                    <span class="text-xs sm:text-sm font-extrabold text-slate-600">
+                      🕒 ${escapeHtml(timeStr)} <span class="text-slate-400 font-semibold">(${escapeHtml(dateStr)})</span>
+                    </span>
+                  </div>
+                  <p class="font-extrabold text-slate-900 text-sm sm:text-base leading-snug">
+                    ${escapeHtml(itemsSummary || 'Sem itens')}
+                  </p>
+                  <p class="text-xs font-semibold text-slate-500 mt-0.5">
+                    ${escapeHtml(paymentInfo)}
+                  </p>
+                </div>
+
+                <div class="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+                  <span class="text-lg sm:text-xl font-black text-emerald-700">
+                    ${formatCurrency(sale.total)}
+                  </span>
+                  <button
+                    type="button"
+                    data-void-sale="${escapeHtml(sale.saleId)}"
+                    data-void-number="${saleNumber}"
+                    class="row-action-btn rounded-xl font-extrabold text-xs sm:text-sm bg-red-50 hover:bg-red-100 active:bg-red-200 text-red-800 border-2 border-red-200 px-3.5 py-2 inline-flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+                  >
+                    <span aria-hidden="true">🗑️</span>
+                    <span>Anular Venda</span>
+                  </button>
+                </div>
+              </div>
+            `;
+          })
+          .join('');
+      }
+
+      function buildWhatsAppSummaryText() {
+        const summary = StateManager.getReportSummary();
+        const todayStr = formatSaleDate(new Date().toISOString());
+
+        const lines = [
+          `🍂 *FEIRA DE OUTONO — FECHO DE CAIXA* 🍂`,
+          `📅 Data: ${todayStr}`,
+          `────────────────────`,
+          `💶 *Receita Total:* *${formatCurrency(summary.totalRevenue)}*`,
+          `🧾 *Total de Vendas:* ${summary.totalSalesCount}`,
+          `🌰 *Artigos Vendidos:* ${summary.totalItemsSold} un.`,
+          `────────────────────`,
+          `📊 *RESUMO POR PRODUTO:*`
+        ];
+
+        if (summary.breakdown.length === 0) {
+          lines.push(`_(Sem vendas registadas)_`);
+        } else {
+          summary.breakdown.forEach((item) => {
+            lines.push(
+              `${item.emoji} ${item.name}: *${item.qty}x* — *${formatCurrency(item.total)}*`
+            );
+          });
+        }
+
+        lines.push(`────────────────────`);
+        lines.push(`✅ _Gerado pela Caixa Registadora Feira de Outono_`);
+        return lines.join('\n');
+      }
+
+      async function handleCopyWhatsAppSummary() {
+        const text = buildWhatsAppSummaryText();
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(text);
+            showToast(
+              'Resumo copiado para a área de transferência!',
+              'Já pode colar diretamente na conversa ou grupo do WhatsApp.'
+            );
+            return;
+          }
+        } catch {
+          // Fallback below for older Android WebViews or file:// protocol
+        }
+
+        const tempArea = document.createElement('textarea');
+        tempArea.value = text;
+        tempArea.setAttribute('readonly', '');
+        tempArea.style.position = 'fixed';
+        tempArea.style.opacity = '0';
+        document.body.appendChild(tempArea);
+        tempArea.select();
+        try {
+          document.execCommand('copy');
+          showToast(
+            'Resumo copiado para a área de transferência!',
+            'Já pode colar diretamente no WhatsApp.'
+          );
+        } catch (err) {
+          console.error('Erro ao copiar resumo:', err);
+          showToast('Não foi possível copiar automaticamente', 'Verifique as permissões do navegador.');
+        } finally {
+          document.body.removeChild(tempArea);
+        }
+      }
+
+      function csvEscape(field) {
+        const str = String(field ?? '');
+        if (str.includes(';') || str.includes('"') || str.includes('\n')) {
+          return '"' + str.replace(/"/g, '""') + '"';
+        }
+        return str;
+      }
+
+      function handleExportCsv() {
+        if (StateManager.sales.length === 0) {
+          showToast('Sem vendas para exportar', 'Registe pelo menos uma venda antes de exportar o CSV.');
+          return;
+        }
+
+        const summary = StateManager.getReportSummary();
+        const rows = [];
+
+        // Section 1: Summary Breakdown by Product (using ';' delimiter standard in Portuguese Excel)
+        rows.push(['FEIRA DE OUTONO - RESUMO POR PRODUTO']);
+        rows.push(['Produto', 'Quantidade Vendida', 'Total (EUR)']);
+        summary.breakdown.forEach((item) => {
+          rows.push([
+            item.name,
+            String(item.qty),
+            Number(item.total).toFixed(2).replace('.', ',')
+          ]);
+        });
+        rows.push([
+          'TOTAL GERAL',
+          String(summary.totalItemsSold),
+          Number(summary.totalRevenue).toFixed(2).replace('.', ',')
+        ]);
+        rows.push([]);
+
+        // Section 2: Detailed Transaction Log
+        rows.push(['HISTORICO DETALHADO DE VENDAS']);
+        rows.push([
+          'ID Venda',
+          'Data',
+          'Hora',
+          'Itens Vendidos',
+          'Total Venda (EUR)',
+          'Valor Recebido (EUR)',
+          'Troco Devolvido (EUR)'
+        ]);
+
+        StateManager.sales.forEach((sale) => {
+          const dateStr = formatSaleDate(sale.timestamp);
+          const timeStr = formatSaleTime(sale.timestamp);
+          const itemsDesc = (Array.isArray(sale.items) ? sale.items : [])
+            .map((i) => `${i.qty}x ${i.name} (${Number(i.price).toFixed(2).replace('.', ',')}€)`)
+            .join(' + ');
+
+          rows.push([
+            sale.saleId,
+            dateStr,
+            timeStr,
+            itemsDesc,
+            Number(sale.total || 0).toFixed(2).replace('.', ','),
+            Number(sale.paymentGiven || 0).toFixed(2).replace('.', ','),
+            Number(sale.changeGiven || 0).toFixed(2).replace('.', ',')
+          ]);
+        });
+
+        const csvContent =
+          '\uFEFF' + rows.map((r) => r.map(csvEscape).join(';')).join('\r\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+
+        const now = new Date();
+        const yyyy = now.getFullYear();
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        const dd = String(now.getDate()).padStart(2, '0');
+
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `feira_de_outono_vendas_${yyyy}-${mm}-${dd}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+        showToast(
+          'Ficheiro CSV exportado!',
+          `Guardado como feira_de_outono_vendas_${yyyy}-${mm}-${dd}.csv`
+        );
+      }
+
+      // ==========================================
+      // 7. ACTIONS: CHECKOUT & MODALS
       // ==========================================
       function handleFinalizeSale() {
         if (StateManager.cart.length === 0) {
@@ -1162,7 +2519,6 @@
         const total = StateManager.getCartTotal();
         const rawPayment = StateManager.getPaymentGiven();
 
-        // If cashier entered a payment smaller than total, warn before completing
         if (rawPayment > 0 && rawPayment < total) {
           const missing = roundCurrency(total - rawPayment);
           showToast(
@@ -1200,6 +2556,7 @@
         StateManager.resetCartAndPayment();
         renderProductGrid();
         renderCart();
+        renderReportView();
         renderNavigation();
 
         showToast('Venda registada com sucesso!', subtitleMsg);
@@ -1228,8 +2585,17 @@
         }
       }
 
+      function refreshAllViews() {
+        renderCategoryFilters();
+        renderProductGrid();
+        renderInventoryList();
+        renderCart();
+        renderReportView();
+        renderNavigation();
+      }
+
       // ==========================================
-      // 6. EVENT LISTENERS & INITIALIZATION
+      // 8. EVENT LISTENERS & INITIALIZATION
       // ==========================================
       function bindEvents() {
         // Top navigation bar tab switching
@@ -1239,6 +2605,12 @@
             if (targetView) {
               StateManager.activeView = targetView;
               renderNavigation();
+              if (targetView === 'products') {
+                renderEmojiPicker();
+                renderInventoryList();
+              } else if (targetView === 'report') {
+                renderReportView();
+              }
             }
           });
         });
@@ -1287,7 +2659,6 @@
             renderProductGrid();
             renderCart();
 
-            // Re-apply subtle visual pulse animation to the tapped card
             const updatedCard = productGrid.querySelector(
               `button[data-product-id="${CSS.escape(productId)}"]`
             );
@@ -1456,6 +2827,301 @@
           });
         }
 
+        // ==========================================
+        // PHASE 3 EVENTS: PRODUCT INVENTORY MANAGER
+        // ==========================================
+        const emojiGrid = document.getElementById('emoji-picker-grid');
+        const prodEmojiInput = document.getElementById('prod-input-emoji');
+        const prodNameInput = document.getElementById('prod-input-name');
+        const prodPriceInput = document.getElementById('prod-input-price');
+        const prodNameError = document.getElementById('prod-name-error');
+        const prodPriceError = document.getElementById('prod-price-error');
+        const prodManagerForm = document.getElementById('product-manager-form');
+        const cancelEditBtn = document.getElementById('cancel-edit-product-btn');
+        const inventoryListContainer = document.getElementById('inventory-list-container');
+        const deleteProductDialog = document.getElementById('confirm-delete-product-dialog');
+        const deleteProductDesc = document.getElementById('confirm-delete-product-desc');
+        const restoreDefaultsBtn = document.getElementById('restore-defaults-btn');
+        const restoreDefaultsDialog = document.getElementById('confirm-restore-defaults-dialog');
+
+        if (emojiGrid && prodEmojiInput) {
+          emojiGrid.addEventListener('click', (e) => {
+            const btn = e.target.closest('button[data-emoji]');
+            if (!btn) return;
+            const chosen = btn.getAttribute('data-emoji');
+            if (chosen) {
+              prodEmojiInput.value = chosen;
+              renderEmojiPicker();
+            }
+          });
+
+          prodEmojiInput.addEventListener('input', () => {
+            renderEmojiPicker();
+          });
+        }
+
+        if (prodNameInput) {
+          prodNameInput.addEventListener('input', () => {
+            if (prodNameError) prodNameError.classList.add('hidden');
+            prodNameInput.removeAttribute('aria-invalid');
+          });
+        }
+
+        if (prodPriceInput) {
+          prodPriceInput.addEventListener('input', () => {
+            if (prodPriceError) prodPriceError.classList.add('hidden');
+            prodPriceInput.removeAttribute('aria-invalid');
+          });
+        }
+
+        if (cancelEditBtn) {
+          cancelEditBtn.addEventListener('click', () => {
+            resetProductForm();
+          });
+        }
+
+        if (prodManagerForm) {
+          prodManagerForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const idVal = document.getElementById('prod-input-id')?.value || '';
+            const nameVal = prodNameInput ? prodNameInput.value.trim() : '';
+            const priceVal = prodPriceInput ? Number(prodPriceInput.value) : 0;
+            const emojiVal = prodEmojiInput ? prodEmojiInput.value.trim() : '🍂';
+            const checkedRadio = document.querySelector(
+              'input[name="product_category"]:checked'
+            );
+            const categoryVal = checkedRadio ? checkedRadio.value : 'Comida';
+
+            let hasError = false;
+            if (!nameVal) {
+              if (prodNameError) prodNameError.classList.remove('hidden');
+              if (prodNameInput) {
+                prodNameInput.setAttribute('aria-invalid', 'true');
+                prodNameInput.focus();
+              }
+              hasError = true;
+            }
+
+            if (!priceVal || Number.isNaN(priceVal) || priceVal <= 0) {
+              if (prodPriceError) prodPriceError.classList.remove('hidden');
+              if (prodPriceInput) {
+                prodPriceInput.setAttribute('aria-invalid', 'true');
+                if (!hasError) prodPriceInput.focus();
+              }
+              hasError = true;
+            }
+
+            if (hasError) return;
+
+            const result = StateManager.upsertProduct({
+              id: idVal,
+              name: nameVal,
+              price: priceVal,
+              category: categoryVal,
+              emoji: emojiVal || '🍂'
+            });
+
+            resetProductForm();
+            refreshAllViews();
+
+            if (result === 'updated') {
+              showToast('Produto atualizado!', `"${nameVal}" foi guardado com sucesso.`);
+            } else {
+              showToast('Produto adicionado!', `"${nameVal}" já está disponível na Caixa.`);
+            }
+          });
+        }
+
+        if (inventoryListContainer) {
+          inventoryListContainer.addEventListener('click', (e) => {
+            const editBtn = e.target.closest('button[data-edit-product]');
+            if (editBtn) {
+              const prodId = editBtn.getAttribute('data-edit-product');
+              if (prodId) loadProductIntoForm(prodId);
+              return;
+            }
+
+            const deleteBtn = e.target.closest('button[data-delete-product]');
+            if (deleteBtn && deleteProductDialog) {
+              const prodId = deleteBtn.getAttribute('data-delete-product');
+              const prod = StateManager.products.find((p) => p.id === prodId);
+              if (!prod) return;
+
+              StateManager.pendingDeleteProductId = prod.id;
+              if (deleteProductDesc) {
+                deleteProductDesc.textContent = `Tem a certeza de que pretende apagar "${prod.emoji} ${prod.name}" (${formatCurrency(prod.price)}) do catálogo?`;
+              }
+              deleteProductDialog.returnValue = '';
+              deleteProductDialog.showModal();
+            }
+          });
+        }
+
+        if (deleteProductDialog) {
+          deleteProductDialog.addEventListener('close', () => {
+            if (
+              deleteProductDialog.returnValue === 'confirm' &&
+              StateManager.pendingDeleteProductId
+            ) {
+              const deletedId = StateManager.pendingDeleteProductId;
+              const prod = StateManager.products.find((p) => p.id === deletedId);
+              StateManager.deleteProduct(deletedId);
+
+              const currentEditingId = document.getElementById('prod-input-id')?.value || '';
+              if (currentEditingId === deletedId) {
+                resetProductForm();
+              }
+              refreshAllViews();
+              showToast(
+                'Produto apagado',
+                prod ? `"${prod.name}" foi removido do catálogo.` : ''
+              );
+            }
+            StateManager.pendingDeleteProductId = null;
+            deleteProductDialog.returnValue = '';
+          });
+        }
+
+        if (restoreDefaultsBtn && restoreDefaultsDialog) {
+          restoreDefaultsBtn.addEventListener('click', () => {
+            restoreDefaultsDialog.returnValue = '';
+            restoreDefaultsDialog.showModal();
+          });
+
+          restoreDefaultsDialog.addEventListener('close', () => {
+            if (restoreDefaultsDialog.returnValue === 'confirm') {
+              StateManager.restoreDefaultProducts();
+              resetProductForm();
+              refreshAllViews();
+              showToast(
+                'Catálogo inicial reposto!',
+                'Os 9 produtos tradicionais da Feira de Outono foram restaurados.'
+              );
+            }
+            restoreDefaultsDialog.returnValue = '';
+          });
+        }
+
+        // ==========================================
+        // PHASE 4 EVENTS: END-OF-DAY REPORT & EXPORTS
+        // ==========================================
+        const copyWhatsappBtn = document.getElementById('copy-whatsapp-btn');
+        const exportCsvBtn = document.getElementById('export-csv-btn');
+        const salesHistoryContainer = document.getElementById('sales-history-container');
+        const voidSaleDialog = document.getElementById('confirm-void-sale-dialog');
+        const voidSaleDesc = document.getElementById('confirm-void-sale-desc');
+        const wipeAllSalesBtn = document.getElementById('wipe-all-sales-btn');
+        const wipeSalesDialog = document.getElementById('confirm-wipe-sales-dialog');
+        const wipeSalesForm = document.getElementById('wipe-sales-form');
+        const wipeConfirmInput = document.getElementById('wipe-confirm-input');
+        const wipeConfirmError = document.getElementById('wipe-confirm-error');
+        const closeWipeDialogBtn = document.getElementById('close-wipe-dialog-btn');
+        const cancelWipeSalesBtn = document.getElementById('cancel-wipe-sales-btn');
+
+        if (copyWhatsappBtn) {
+          copyWhatsappBtn.addEventListener('click', handleCopyWhatsAppSummary);
+        }
+
+        if (exportCsvBtn) {
+          exportCsvBtn.addEventListener('click', handleExportCsv);
+        }
+
+        if (salesHistoryContainer && voidSaleDialog) {
+          salesHistoryContainer.addEventListener('click', (e) => {
+            const voidBtn = e.target.closest('button[data-void-sale]');
+            if (!voidBtn) return;
+            const saleId = voidBtn.getAttribute('data-void-sale');
+            const saleNum = voidBtn.getAttribute('data-void-number') || '';
+            const sale = StateManager.sales.find((s) => s.saleId === saleId);
+            if (!sale) return;
+
+            const itemsSummary = (Array.isArray(sale.items) ? sale.items : [])
+              .map((i) => `${i.qty}× ${i.name}`)
+              .join(', ');
+
+            StateManager.pendingVoidSaleId = sale.saleId;
+            if (voidSaleDesc) {
+              voidSaleDesc.textContent = `Venda #${saleNum} (${formatCurrency(sale.total)} — ${itemsSummary}). O valor será descontado da Receita Total.`;
+            }
+            voidSaleDialog.returnValue = '';
+            voidSaleDialog.showModal();
+          });
+
+          voidSaleDialog.addEventListener('close', () => {
+            if (
+              voidSaleDialog.returnValue === 'confirm' &&
+              StateManager.pendingVoidSaleId
+            ) {
+              const sale = StateManager.sales.find(
+                (s) => s.saleId === StateManager.pendingVoidSaleId
+              );
+              StateManager.voidSale(StateManager.pendingVoidSaleId);
+              renderReportView();
+              renderNavigation();
+              showToast(
+                'Venda anulada com sucesso!',
+                sale ? `Foram descontados ${formatCurrency(sale.total)} do fecho de caixa.` : ''
+              );
+            }
+            StateManager.pendingVoidSaleId = null;
+            voidSaleDialog.returnValue = '';
+          });
+        }
+
+        if (wipeAllSalesBtn && wipeSalesDialog) {
+          wipeAllSalesBtn.addEventListener('click', () => {
+            if (StateManager.sales.length === 0) {
+              showToast('Sem vendas registadas', 'O histórico de vendas já se encontra limpo.');
+              return;
+            }
+            if (wipeConfirmInput) {
+              wipeConfirmInput.value = '';
+              wipeConfirmInput.removeAttribute('aria-invalid');
+            }
+            if (wipeConfirmError) wipeConfirmError.classList.add('hidden');
+            wipeSalesDialog.showModal();
+          });
+        }
+
+        if (wipeConfirmInput) {
+          wipeConfirmInput.addEventListener('input', () => {
+            if (wipeConfirmError) wipeConfirmError.classList.add('hidden');
+            wipeConfirmInput.removeAttribute('aria-invalid');
+          });
+        }
+
+        if (closeWipeDialogBtn && wipeSalesDialog) {
+          closeWipeDialogBtn.addEventListener('click', () => wipeSalesDialog.close());
+        }
+
+        if (cancelWipeSalesBtn && wipeSalesDialog) {
+          cancelWipeSalesBtn.addEventListener('click', () => wipeSalesDialog.close());
+        }
+
+        if (wipeSalesForm && wipeSalesDialog) {
+          wipeSalesForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const typed = wipeConfirmInput ? wipeConfirmInput.value.trim().toUpperCase() : '';
+            if (typed !== 'LIMPAR') {
+              if (wipeConfirmError) wipeConfirmError.classList.remove('hidden');
+              if (wipeConfirmInput) {
+                wipeConfirmInput.setAttribute('aria-invalid', 'true');
+                wipeConfirmInput.focus();
+              }
+              return;
+            }
+
+            StateManager.wipeAllSales();
+            wipeSalesDialog.close();
+            renderReportView();
+            renderNavigation();
+            showToast(
+              'Todas as vendas foram limpas!',
+              'Caixa pronta para iniciar um novo dia de Feira de Outono.'
+            );
+          });
+        }
+
         setupDialogLightDismissFallback();
       }
 
@@ -1465,6 +3131,9 @@
         renderCategoryFilters();
         renderProductGrid();
         renderCart();
+        renderEmojiPicker();
+        renderInventoryList();
+        renderReportView();
         bindEvents();
       }
 
