@@ -655,105 +655,44 @@
               </div>
             </div>
 
-            <!-- Row 3: Categoria (4 Visible Accessible Radio Pills) -->
+            <!-- Row 3: Categoria (Dynamic Accessible Radio Pills + "➕ Nova Categoria" Button) -->
             <fieldset class="border-0 p-0 m-0">
-              <legend class="block text-sm font-extrabold text-slate-800 mb-1.5">
-                Categoria <span class="text-red-600" aria-hidden="true">*</span>
-              </legend>
-              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                <div>
-                  <input
-                    type="radio"
-                    id="cat-radio-comida"
-                    name="product_category"
-                    value="Comida"
-                    checked
-                    class="visually-hidden cat-radio-input"
-                  />
-                  <label
-                    for="cat-radio-comida"
-                    class="cat-radio-label relative cursor-pointer w-full min-h-[56px] rounded-xl border-2 border-slate-300 bg-slate-50 hover:bg-amber-50 font-extrabold text-sm sm:text-base text-slate-800 flex items-center justify-center gap-2 px-3 py-2.5 transition-all select-none"
-                  >
-                    <span class="text-xl leading-none" aria-hidden="true">🍲</span>
-                    <span>Comida</span>
-                  </label>
-                </div>
-
-                <div>
-                  <input
-                    type="radio"
-                    id="cat-radio-bebidas"
-                    name="product_category"
-                    value="Bebidas"
-                    class="visually-hidden cat-radio-input"
-                  />
-                  <label
-                    for="cat-radio-bebidas"
-                    class="cat-radio-label relative cursor-pointer w-full min-h-[56px] rounded-xl border-2 border-slate-300 bg-slate-50 hover:bg-amber-50 font-extrabold text-sm sm:text-base text-slate-800 flex items-center justify-center gap-2 px-3 py-2.5 transition-all select-none"
-                  >
-                    <span class="text-xl leading-none" aria-hidden="true">🧃</span>
-                    <span>Bebidas</span>
-                  </label>
-                </div>
-
-                <div>
-                  <input
-                    type="radio"
-                    id="cat-radio-fruta"
-                    name="product_category"
-                    value="Fruta"
-                    class="visually-hidden cat-radio-input"
-                  />
-                  <label
-                    for="cat-radio-fruta"
-                    class="cat-radio-label relative cursor-pointer w-full min-h-[56px] rounded-xl border-2 border-slate-300 bg-slate-50 hover:bg-amber-50 font-extrabold text-sm sm:text-base text-slate-800 flex items-center justify-center gap-2 px-3 py-2.5 transition-all select-none"
-                  >
-                    <span class="text-xl leading-none" aria-hidden="true">🍎</span>
-                    <span>Fruta / Hortícolas</span>
-                  </label>
-                </div>
-
-                <div>
-                  <input
-                    type="radio"
-                    id="cat-radio-outros"
-                    name="product_category"
-                    value="Outros"
-                    class="visually-hidden cat-radio-input"
-                  />
-                  <label
-                    for="cat-radio-outros"
-                    class="cat-radio-label relative cursor-pointer w-full min-h-[56px] rounded-xl border-2 border-slate-300 bg-slate-50 hover:bg-amber-50 font-extrabold text-sm sm:text-base text-slate-800 flex items-center justify-center gap-2 px-3 py-2.5 transition-all select-none"
-                  >
-                    <span class="text-xl leading-none" aria-hidden="true">🍯</span>
-                    <span>Outros</span>
-                  </label>
-                </div>
+              <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                <legend class="block text-sm font-extrabold text-slate-800">
+                  Categoria <span class="text-red-600" aria-hidden="true">*</span>
+                </legend>
+                <button
+                  type="button"
+                  id="open-new-category-btn"
+                  class="rounded-xl bg-amber-100 hover:bg-amber-200 active:bg-amber-300 text-amber-950 border-2 border-amber-400 font-extrabold text-xs sm:text-sm px-3.5 py-2 inline-flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all"
+                  style="min-block-size: 44px; min-inline-size: auto;"
+                >
+                  <span aria-hidden="true">➕</span>
+                  <span>Nova Categoria</span>
+                </button>
+              </div>
+              <div
+                id="product-category-radios"
+                class="grid grid-cols-2 sm:grid-cols-4 gap-2"
+              >
+                <!-- Populated dynamically by JS from autumn_pos_categories -->
               </div>
             </fieldset>
 
-            <!-- Row 4: Emoji Picker (16 Quick-Tap Emojis including Fruit/Veg + Custom Emoji Input) -->
+            <!-- Row 4: Expanded Grouped Emoji/Icon Selector + Custom Emoji Input -->
             <div>
-              <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5">
-                <label for="prod-input-emoji" class="text-sm font-extrabold text-slate-800">
-                  Emoji do Produto
-                </label>
-                <span class="text-xs font-medium text-slate-500">
-                  Toque num ícone abaixo ou escreva qualquer emoji
-                </span>
-              </div>
-
-              <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                <div
-                  id="emoji-picker-grid"
-                  role="group"
-                  aria-label="Escolher emoji rápido"
-                  class="grid grid-cols-8 sm:grid-cols-8 gap-1.5 flex-1"
-                >
-                  <!-- Populated dynamically by JS -->
+              <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                <div>
+                  <label for="prod-input-emoji" class="block text-sm font-extrabold text-slate-800">
+                    Ícone / Emoji do Produto
+                  </label>
+                  <span class="text-xs font-medium text-slate-500">
+                    Toque num ícone abaixo ou escreva qualquer emoji no campo ao lado
+                  </span>
                 </div>
 
-                <div class="flex items-center gap-2 sm:w-36 shrink-0">
+                <div class="flex items-center gap-2">
+                  <span class="text-xs font-bold text-slate-600">Selecionado:</span>
                   <input
                     type="text"
                     id="prod-input-emoji"
@@ -761,9 +700,18 @@
                     value="🌰"
                     maxlength="8"
                     aria-label="Emoji personalizado"
-                    class="w-full rounded-xl border-2 border-amber-400 bg-amber-50/50 px-3 py-2 text-center text-2xl font-bold focus:border-amber-600 focus:outline-none"
+                    class="w-20 rounded-xl border-2 border-amber-500 bg-amber-50/70 px-2.5 py-1.5 text-center text-2xl font-bold focus:border-amber-600 focus:outline-none shadow-inner"
                   />
                 </div>
+              </div>
+
+              <div
+                id="emoji-picker-grid"
+                role="group"
+                aria-label="Escolher ícone ou emoji do produto por categoria"
+                class="grid grid-cols-1 md:grid-cols-2 gap-3"
+              >
+                <!-- Populated dynamically by JS with 4 themed icon groups -->
               </div>
             </div>
 
@@ -1467,6 +1415,122 @@
     </form>
   </dialog>
 
+  <!-- MODAL 7: Create Custom Category ("➕ Nova Categoria") -->
+  <dialog
+    id="new-category-dialog"
+    closedby="any"
+    aria-labelledby="new-category-title"
+    class="w-[min(94vw,30rem)] rounded-2xl bg-white p-0 shadow-2xl border-2 border-amber-500 text-slate-900"
+  >
+    <div class="bg-gradient-to-r from-amber-800 to-orange-700 text-white px-5 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <span class="text-2xl leading-none" aria-hidden="true">🗂️</span>
+        <div>
+          <h2 id="new-category-title" class="text-lg font-extrabold leading-tight">Nova Categoria</h2>
+          <p class="text-xs font-semibold text-amber-100">Crie uma secção personalizada para a Caixa</p>
+        </div>
+      </div>
+      <button
+        type="button"
+        id="close-new-category-btn"
+        aria-label="Fechar janela"
+        class="rounded-xl bg-black/20 hover:bg-black/35 text-white font-bold px-3 py-1.5 text-lg"
+        style="min-block-size: 44px; min-inline-size: 44px;"
+      >
+        ✕
+      </button>
+    </div>
+
+    <form id="new-category-form" class="p-5 flex flex-col gap-4" novalidate>
+      <!-- Quick Suggestion Chips -->
+      <div>
+        <span class="block text-xs font-extrabold uppercase tracking-wider text-slate-500 mb-1.5">
+          Sugestões rápidas (toque para preencher):
+        </span>
+        <div class="flex flex-wrap gap-1.5">
+          <button type="button" data-suggest-cat="Frutos Secos" data-suggest-emoji="🌰" data-suggest-color="amber" class="suggest-cat-btn rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-950 border border-amber-300 px-2.5 py-1.5 text-xs font-extrabold active:scale-95 transition-all" style="min-block-size: 36px; min-inline-size: auto;">
+            🌰 Frutos Secos
+          </button>
+          <button type="button" data-suggest-cat="Legumes" data-suggest-emoji="🥕" data-suggest-color="emerald" class="suggest-cat-btn rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-950 border border-emerald-300 px-2.5 py-1.5 text-xs font-extrabold active:scale-95 transition-all" style="min-block-size: 36px; min-inline-size: auto;">
+            🥕 Legumes
+          </button>
+          <button type="button" data-suggest-cat="Compotas" data-suggest-emoji="🍯" data-suggest-color="orange" class="suggest-cat-btn rounded-lg bg-orange-50 hover:bg-orange-100 text-orange-950 border border-orange-300 px-2.5 py-1.5 text-xs font-extrabold active:scale-95 transition-all" style="min-block-size: 36px; min-inline-size: auto;">
+            🍯 Compotas
+          </button>
+          <button type="button" data-suggest-cat="Doces" data-suggest-emoji="🍰" data-suggest-color="rose" class="suggest-cat-btn rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-950 border border-rose-300 px-2.5 py-1.5 text-xs font-extrabold active:scale-95 transition-all" style="min-block-size: 36px; min-inline-size: auto;">
+            🍰 Doces
+          </button>
+          <button type="button" data-suggest-cat="Azeites" data-suggest-emoji="🫒" data-suggest-color="lime" class="suggest-cat-btn rounded-lg bg-lime-50 hover:bg-lime-100 text-lime-950 border border-lime-300 px-2.5 py-1.5 text-xs font-extrabold active:scale-95 transition-all" style="min-block-size: 36px; min-inline-size: auto;">
+            🫒 Azeites
+          </button>
+        </div>
+      </div>
+
+      <!-- Category Name & Icon -->
+      <div class="grid grid-cols-12 gap-3">
+        <div class="col-span-9">
+          <label for="new-cat-name-input" class="block text-sm font-extrabold text-slate-800 mb-1">
+            Nome da Categoria <span class="text-red-600" aria-hidden="true">*</span>
+          </label>
+          <input
+            type="text"
+            id="new-cat-name-input"
+            name="category_name"
+            required
+            maxlength="32"
+            autofocus
+            placeholder="Ex: Frutos Secos, Compotas, Azeites..."
+            enterkeyhint="done"
+            aria-describedby="new-cat-name-error"
+            class="w-full rounded-xl border-2 border-slate-300 bg-white px-3.5 py-2.5 font-extrabold text-slate-900 focus:border-amber-600 focus:outline-none"
+          />
+        </div>
+        <div class="col-span-3">
+          <label for="new-cat-emoji-input" class="block text-sm font-extrabold text-slate-800 mb-1">
+            Ícone
+          </label>
+          <input
+            type="text"
+            id="new-cat-emoji-input"
+            name="category_emoji"
+            value="🏷️"
+            maxlength="8"
+            class="w-full rounded-xl border-2 border-slate-300 bg-amber-50/40 px-2 py-2.5 text-center text-2xl font-bold focus:border-amber-600 focus:outline-none"
+          />
+        </div>
+      </div>
+      <p id="new-cat-name-error" class="text-xs font-bold text-red-600 -mt-2 hidden">
+        Por favor, indique um nome para a categoria.
+      </p>
+
+      <!-- Color Badge Selector -->
+      <div>
+        <span class="block text-sm font-extrabold text-slate-800 mb-1.5">
+          Cor da Etiqueta
+        </span>
+        <div id="new-cat-color-picker" class="grid grid-cols-4 gap-2" role="group" aria-label="Escolher cor da categoria">
+          <!-- Populated dynamically by JS -->
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2.5 pt-2">
+        <button
+          type="button"
+          id="cancel-new-category-btn"
+          class="rounded-xl font-bold text-slate-800 bg-slate-100 hover:bg-slate-200 border border-slate-300 px-4 py-3"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          class="rounded-xl font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 border border-emerald-700 px-4 py-3 shadow-md"
+        >
+          Criar Categoria
+        </button>
+      </div>
+    </form>
+  </dialog>
+
   <!-- Application State & View Engine -->
   <script>
     (function () {
@@ -1477,22 +1541,45 @@
       // ==========================================
       const STORAGE_KEYS = {
         PRODUCTS: 'autumn_pos_products',
-        SALES: 'autumn_pos_sales'
+        SALES: 'autumn_pos_sales',
+        CATEGORIES: 'autumn_pos_categories'
       };
 
-      const CATEGORIES = [
-        { id: 'Todos', label: 'Todos', emoji: '🍂' },
-        { id: 'Comida', label: 'Comida', emoji: '🍲' },
-        { id: 'Bebidas', label: 'Bebidas', emoji: '🧃' },
-        { id: 'Fruta', label: 'Fruta / Hortícolas', emoji: '🍎' },
-        { id: 'Outros', label: 'Outros', emoji: '🍯' }
+      const DEFAULT_CATEGORIES = [
+        { id: 'Comida', label: 'Comida', emoji: '🍲', badgeColor: 'orange' },
+        { id: 'Bebidas', label: 'Bebidas', emoji: '🧃', badgeColor: 'amber' },
+        { id: 'Fruta', label: 'Fruta / Hortícolas', emoji: '🍎', badgeColor: 'emerald' },
+        { id: 'Outros', label: 'Outros', emoji: '🍯', badgeColor: 'slate' }
       ];
 
-      const PRODUCT_CATEGORIES = CATEGORIES.filter((c) => c.id !== 'Todos');
+      const CATEGORY_COLOR_PALETTE = [
+        { key: 'orange', label: 'Laranja', classes: 'bg-orange-100 text-orange-900 border-orange-200' },
+        { key: 'amber', label: 'Âmbar', classes: 'bg-amber-100 text-amber-900 border-amber-200' },
+        { key: 'emerald', label: 'Verde', classes: 'bg-emerald-100 text-emerald-900 border-emerald-200' },
+        { key: 'lime', label: 'Oliva', classes: 'bg-lime-100 text-lime-900 border-lime-300' },
+        { key: 'teal', label: 'Turquesa', classes: 'bg-teal-100 text-teal-900 border-teal-200' },
+        { key: 'rose', label: 'Framboesa', classes: 'bg-rose-100 text-rose-900 border-rose-200' },
+        { key: 'purple', label: 'Violeta', classes: 'bg-purple-100 text-purple-900 border-purple-200' },
+        { key: 'slate', label: 'Cinza', classes: 'bg-slate-100 text-slate-800 border-slate-200' }
+      ];
 
-      const QUICK_EMOJIS = [
-        '🌰', '🍰', '🥖', '🥣', '🧃', '💧', '☕', '🍎',
-        '🍐', '🍊', '🎃', '🥕', '🥔', '🥬', '🍯', '🥧'
+      const EMOJI_GROUPS = [
+        {
+          title: '🍎 Frutas & Frutos Secos',
+          emojis: ['🥝', '🍋', '🍎', '🔴', '🍊', '🌰', '🥜', '🍐', '🍌', '🍇', '🍓']
+        },
+        {
+          title: '🥕 Legumes & Secos',
+          emojis: ['🎃', '🥒', '🧅', '🍠', '🫘', '🥕', '🥔', '🥬', '🥦', '🍅', '🧄', '🌶️']
+        },
+        {
+          title: '🍰 Doces, Bolos & Compotas',
+          emojis: ['🍫', '🍬', '🥥', '🍯', '🫙', '🧁', '🍪', '🍰', '🥞', '🥧', '🍩', '🍮']
+        },
+        {
+          title: '🫒 Azeites, Bebidas & Outros',
+          emojis: ['🫒', '🌱', '🌿', '🛁', '🧼', '🕯️', '☕', '🧃', '💧', '🍷', '🎁', '🛍️', '🥖', '🥣']
+        }
       ];
 
       const DEFAULT_PRODUCTS = [
@@ -1509,21 +1596,35 @@
         { id: 'prod_compota', name: 'Compota Caseira', price: 3.00, category: 'Outros', emoji: '🍯', unit: 'un' }
       ];
 
-      const CATEGORY_BADGE_STYLES = {
-        Comida: 'bg-orange-100 text-orange-900 border-orange-200',
-        Bebidas: 'bg-amber-100 text-amber-900 border-amber-200',
-        Fruta: 'bg-emerald-100 text-emerald-900 border-emerald-200',
-        Outros: 'bg-slate-100 text-slate-800 border-slate-200'
-      };
+      function inferCategoryMeta(catName, indexHint = 0) {
+        const lower = String(catName || '').toLowerCase();
+        if (lower.includes('sec')) return { emoji: '🌰', badgeColor: 'amber' };
+        if (lower.includes('legum') || lower.includes('hort')) return { emoji: '🥕', badgeColor: 'emerald' };
+        if (lower.includes('frut')) return { emoji: '🍎', badgeColor: 'emerald' };
+        if (lower.includes('compot') || lower.includes('mel')) return { emoji: '🍯', badgeColor: 'orange' };
+        if (lower.includes('doce') || lower.includes('bolo')) return { emoji: '🍰', badgeColor: 'rose' };
+        if (lower.includes('azeit') || lower.includes('plant') || lower.includes('erva')) return { emoji: '🫒', badgeColor: 'lime' };
+        if (lower.includes('bebid') || lower.includes('sumo') || lower.includes('vinho')) return { emoji: '🧃', badgeColor: 'amber' };
+        if (lower.includes('sabon') || lower.includes('vela') || lower.includes('artesan')) return { emoji: '🕯️', badgeColor: 'purple' };
+        const paletteChoice = CATEGORY_COLOR_PALETTE[indexHint % CATEGORY_COLOR_PALETTE.length];
+        return { emoji: '🏷️', badgeColor: paletteChoice ? paletteChoice.key : 'amber' };
+      }
+
+      function comparePortugueseAlpha(a, b) {
+        return String(a || '').localeCompare(String(b || ''), 'pt-PT', { sensitivity: 'base' });
+      }
 
       // ==========================================
       // 2. LOCALSTORAGE & CART STATE MANAGER
       // ==========================================
       const StateManager = {
         products: [],
+        categories: [],
         sales: [],
         activeView: 'register',
         activeCategory: 'Todos',
+        selectedProductFormCategory: 'Comida',
+        newCategorySelectedColor: 'amber',
         // Cart items: { id, name, price, qty, emoji, unit: 'un' | 'kg' }
         // For unit === 'kg', price is €/kg and qty is weight in kg (e.g., 0.350)
         cart: [],
@@ -1537,7 +1638,11 @@
 
         init() {
           this.products = this.loadProducts();
+          this.categories = this.loadCategories(this.products);
           this.sales = this.loadSales();
+          if (this.categories.length > 0) {
+            this.selectedProductFormCategory = this.categories[0].id;
+          }
         },
 
         loadProducts() {
@@ -1546,26 +1651,12 @@
             if (raw) {
               const parsed = JSON.parse(raw);
               if (Array.isArray(parsed) && parsed.length > 0) {
-                // Ensure backward compatibility with products created before unit ('un'|'kg') existed
-                const normalized = parsed.map((p) => ({
+                // Strictly preserve all existing products in localStorage without overwriting or resetting them
+                return parsed.map((p) => ({
                   ...p,
+                  category: (p.category || 'Outros').trim(),
                   unit: p.unit === 'kg' ? 'kg' : 'un'
                 }));
-                // If user still had only the initial 9 items without any kg examples, add the two kg examples automatically
-                const hasKgExample = normalized.some((p) => p.unit === 'kg');
-                const hasDefaultIdsOnly =
-                  normalized.length === 9 &&
-                  normalized.every((p) => DEFAULT_PRODUCTS.some((d) => d.id === p.id));
-                if (!hasKgExample && hasDefaultIdsOnly) {
-                  normalized.splice(
-                    8,
-                    0,
-                    { id: 'prod_fruta_peso', name: 'Fruta ao Peso', price: 1.50, category: 'Fruta', emoji: '🍐', unit: 'kg' },
-                    { id: 'prod_legumes_peso', name: 'Legumes / Hortícolas ao Peso', price: 1.50, category: 'Fruta', emoji: '🥕', unit: 'kg' }
-                  );
-                  this.saveProducts(normalized);
-                }
-                return normalized;
               }
             }
           } catch (err) {
@@ -1583,6 +1674,134 @@
           } catch (err) {
             console.error('Erro ao guardar produtos no localStorage:', err);
           }
+        },
+
+        loadCategories(productsList = []) {
+          const categoryMap = new Map();
+
+          // 1. Seed with stored categories if present, or DEFAULT_CATEGORIES
+          let storedList = [];
+          try {
+            const raw = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
+            if (raw) {
+              const parsed = JSON.parse(raw);
+              if (Array.isArray(parsed)) {
+                storedList = parsed;
+              }
+            }
+          } catch (err) {
+            console.error('Erro ao ler categorias do localStorage:', err);
+          }
+
+          const baseList = storedList.length > 0 ? storedList : DEFAULT_CATEGORIES;
+          baseList.forEach((entry, idx) => {
+            if (!entry) return;
+            const id = typeof entry === 'string' ? entry.trim() : String(entry.id || entry.label || '').trim();
+            if (!id || id === 'Todos') return;
+            const defaultMatch = DEFAULT_CATEGORIES.find((d) => d.id.toLowerCase() === id.toLowerCase());
+            const inferred = inferCategoryMeta(id, idx);
+            categoryMap.set(id, {
+              id,
+              label: (typeof entry === 'object' && entry.label ? entry.label : defaultMatch ? defaultMatch.label : id).trim(),
+              emoji: (typeof entry === 'object' && entry.emoji ? entry.emoji : defaultMatch ? defaultMatch.emoji : inferred.emoji).trim(),
+              badgeColor: (typeof entry === 'object' && entry.badgeColor ? entry.badgeColor : defaultMatch ? defaultMatch.badgeColor : inferred.badgeColor)
+            });
+          });
+
+          // 2. Ensure all default categories exist
+          DEFAULT_CATEGORIES.forEach((defCat) => {
+            if (!categoryMap.has(defCat.id)) {
+              categoryMap.set(defCat.id, { ...defCat });
+            }
+          });
+
+          // 3. Ensure any unique category already used by products in autumn_pos_products is preserved
+          (Array.isArray(productsList) ? productsList : []).forEach((prod) => {
+            const catId = String(prod?.category || '').trim();
+            if (catId && catId !== 'Todos' && !categoryMap.has(catId)) {
+              const inferred = inferCategoryMeta(catId, categoryMap.size);
+              categoryMap.set(catId, {
+                id: catId,
+                label: catId,
+                emoji: inferred.emoji,
+                badgeColor: inferred.badgeColor
+              });
+            }
+          });
+
+          const finalCategories = Array.from(categoryMap.values());
+          this.saveCategories(finalCategories);
+          return finalCategories;
+        },
+
+        saveCategories(categoriesList) {
+          this.categories = categoriesList;
+          try {
+            localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(categoriesList));
+          } catch (err) {
+            console.error('Erro ao guardar categorias no localStorage:', err);
+          }
+        },
+
+        addCategory(name, emoji = '', badgeColor = '') {
+          const cleanName = String(name || '').trim();
+          if (!cleanName || cleanName.toLowerCase() === 'todos') return null;
+
+          // Check case-insensitively if category already exists
+          const existing = this.categories.find(
+            (c) => c.id.toLowerCase() === cleanName.toLowerCase() || c.label.toLowerCase() === cleanName.toLowerCase()
+          );
+          if (existing) {
+            if (emoji && emoji.trim()) existing.emoji = emoji.trim();
+            if (badgeColor) existing.badgeColor = badgeColor;
+            this.saveCategories([...this.categories]);
+            return existing;
+          }
+
+          const inferred = inferCategoryMeta(cleanName, this.categories.length);
+          const newCat = {
+            id: cleanName,
+            label: cleanName,
+            emoji: (emoji || '').trim() || inferred.emoji,
+            badgeColor: badgeColor || inferred.badgeColor
+          };
+          const updated = [...this.categories, newCat];
+          this.saveCategories(updated);
+          return newCat;
+        },
+
+        getCategoryBadgeClasses(categoryId) {
+          const cat = this.categories.find((c) => c.id === categoryId);
+          const colorKey = cat ? cat.badgeColor : 'slate';
+          const found = CATEGORY_COLOR_PALETTE.find((p) => p.key === colorKey);
+          return found ? found.classes : 'bg-slate-100 text-slate-800 border-slate-200';
+        },
+
+        getCategoryLabel(categoryId) {
+          const cat = this.categories.find((c) => c.id === categoryId);
+          return cat ? cat.label : categoryId;
+        },
+
+        getSortedProducts(categoryFilter = 'Todos') {
+          const orderMap = new Map();
+          this.categories.forEach((cat, idx) => {
+            orderMap.set(cat.id, idx);
+          });
+
+          const filtered =
+            categoryFilter === 'Todos'
+              ? [...this.products]
+              : this.products.filter((p) => p.category === categoryFilter);
+
+          return filtered.sort((a, b) => {
+            if (categoryFilter === 'Todos' && a.category !== b.category) {
+              const orderA = orderMap.has(a.category) ? orderMap.get(a.category) : 999;
+              const orderB = orderMap.has(b.category) ? orderMap.get(b.category) : 999;
+              if (orderA !== orderB) return orderA - orderB;
+              return comparePortugueseAlpha(a.category, b.category);
+            }
+            return comparePortugueseAlpha(a.name, b.name);
+          });
         },
 
         loadSales() {
@@ -1614,9 +1833,12 @@
         upsertProduct(productData) {
           const cleanName = productData.name.trim();
           const cleanPrice = roundCurrency(productData.price);
-          const cleanCategory = productData.category || 'Comida';
+          const cleanCategory = (productData.category || 'Comida').trim();
           const cleanEmoji = (productData.emoji || '').trim() || '🍂';
           const cleanUnit = productData.unit === 'kg' ? 'kg' : 'un';
+
+          // Ensure the category is registered in autumn_pos_categories
+          this.addCategory(cleanCategory);
 
           if (productData.id) {
             const updatedList = this.products.map((p) =>
@@ -2009,7 +2231,12 @@
         const container = document.getElementById('category-filters');
         if (!container) return;
 
-        container.innerHTML = CATEGORIES.map((cat) => {
+        const filterCategories = [
+          { id: 'Todos', label: 'Todos', emoji: '🍂' },
+          ...StateManager.categories
+        ];
+
+        container.innerHTML = filterCategories.map((cat) => {
           const isActive = StateManager.activeCategory === cat.id;
           const count =
             cat.id === 'Todos'
@@ -2046,15 +2273,13 @@
         const grid = document.getElementById('product-grid');
         if (!grid) return;
 
-        const filteredProducts =
-          StateManager.activeCategory === 'Todos'
-            ? StateManager.products
-            : StateManager.products.filter((p) => p.category === StateManager.activeCategory);
+        // Sort first by category order (when viewing "Todos") and then alphabetically A-Z by product name (pt-PT)
+        const sortedProducts = StateManager.getSortedProducts(StateManager.activeCategory);
 
-        const productCardsHtml = filteredProducts
+        const productCardsHtml = sortedProducts
           .map((product) => {
-            const badgeStyle =
-              CATEGORY_BADGE_STYLES[product.category] || CATEGORY_BADGE_STYLES.Outros;
+            const badgeStyle = StateManager.getCategoryBadgeClasses(product.category);
+            const categoryLabel = StateManager.getCategoryLabel(product.category);
             const isKg = product.unit === 'kg';
             const inCartSummary = StateManager.getProductSummaryInCart(product);
             const activeRing = inCartSummary
@@ -2073,7 +2298,7 @@
                   </span>
                   <div class="flex flex-col items-end gap-1">
                     <span class="px-2 py-0.5 text-xs font-bold rounded-md border ${badgeStyle}">
-                      ${escapeHtml(product.category)}
+                      ${escapeHtml(categoryLabel)}
                     </span>
                     ${
                       isKg
@@ -2333,6 +2558,71 @@
         }
       }
 
+      function renderProductCategoryRadios(selectedCatId = null) {
+        const container = document.getElementById('product-category-radios');
+        if (!container) return;
+
+        if (selectedCatId) {
+          StateManager.selectedProductFormCategory = selectedCatId;
+        }
+        const activeCat =
+          StateManager.selectedProductFormCategory ||
+          (StateManager.categories[0] ? StateManager.categories[0].id : 'Comida');
+
+        container.innerHTML = StateManager.categories
+          .map((cat, idx) => {
+            const radioId = `cat-radio-dyn-${idx}`;
+            const isChecked = cat.id === activeCat;
+            const badgeStyle = StateManager.getCategoryBadgeClasses(cat.id);
+
+            return `
+              <div>
+                <input
+                  type="radio"
+                  id="${radioId}"
+                  name="product_category"
+                  value="${escapeHtml(cat.id)}"
+                  ${isChecked ? 'checked' : ''}
+                  class="visually-hidden cat-radio-input"
+                />
+                <label
+                  for="${radioId}"
+                  class="cat-radio-label relative cursor-pointer w-full min-h-[56px] rounded-xl border-2 border-slate-300 bg-slate-50 hover:bg-amber-50 font-extrabold text-sm sm:text-base text-slate-800 flex items-center justify-center gap-2 px-3 py-2.5 transition-all select-none text-center"
+                >
+                  <span class="text-xl leading-none shrink-0" aria-hidden="true">${escapeHtml(cat.emoji)}</span>
+                  <span class="truncate">${escapeHtml(cat.label)}</span>
+                  <span class="w-2.5 h-2.5 rounded-full border shrink-0 ${badgeStyle}" aria-hidden="true"></span>
+                </label>
+              </div>
+            `;
+          })
+          .join('');
+      }
+
+      function renderNewCategoryColorPicker() {
+        const container = document.getElementById('new-cat-color-picker');
+        if (!container) return;
+
+        const currentColor = StateManager.newCategorySelectedColor || 'amber';
+
+        container.innerHTML = CATEGORY_COLOR_PALETTE.map((col) => {
+          const isSelected = col.key === currentColor;
+          return `
+            <button
+              type="button"
+              data-cat-color="${escapeHtml(col.key)}"
+              aria-pressed="${isSelected ? 'true' : 'false'}"
+              class="rounded-xl px-2.5 py-2 font-extrabold text-xs border-2 transition-all active:scale-95 flex items-center justify-center gap-1.5 ${
+                col.classes
+              } ${isSelected ? 'ring-2 ring-slate-900 ring-offset-1 shadow-sm' : 'opacity-80 hover:opacity-100'}"
+              style="min-block-size: 44px; min-inline-size: 0;"
+            >
+              <span>${isSelected ? '✓ ' : ''}${escapeHtml(col.label)}</span>
+            </button>
+          `;
+        }).join('');
+      }
+
       function renderEmojiPicker() {
         const grid = document.getElementById('emoji-picker-grid');
         const emojiInput = document.getElementById('prod-input-emoji');
@@ -2340,23 +2630,38 @@
 
         const currentEmoji = emojiInput ? emojiInput.value.trim() : '🌰';
 
-        grid.innerHTML = QUICK_EMOJIS.map((emoji) => {
-          const isSelected = currentEmoji === emoji;
+        grid.innerHTML = EMOJI_GROUPS.map((group) => {
+          const buttonsHtml = group.emojis
+            .map((emoji) => {
+              const isSelected = currentEmoji === emoji;
+              return `
+                <button
+                  type="button"
+                  data-emoji="${escapeHtml(emoji)}"
+                  aria-label="Selecionar ícone ${escapeHtml(emoji)}"
+                  aria-pressed="${isSelected ? 'true' : 'false'}"
+                  class="emoji-pick-btn rounded-xl text-2xl flex items-center justify-center border-2 transition-all active:scale-95 ${
+                    isSelected
+                      ? 'bg-amber-500/25 border-amber-600 text-amber-950 shadow-sm ring-2 ring-amber-400/50'
+                      : 'bg-white hover:bg-amber-50 border-slate-200 text-slate-900'
+                  }"
+                  style="min-block-size: 46px; min-inline-size: 0;"
+                >
+                  <span aria-hidden="true">${escapeHtml(emoji)}</span>
+                </button>
+              `;
+            })
+            .join('');
+
           return `
-            <button
-              type="button"
-              data-emoji="${escapeHtml(emoji)}"
-              aria-label="Selecionar emoji ${escapeHtml(emoji)}"
-              aria-pressed="${isSelected ? 'true' : 'false'}"
-              class="emoji-pick-btn rounded-xl text-2xl flex items-center justify-center border-2 transition-all active:scale-95 ${
-                isSelected
-                  ? 'bg-amber-500/20 border-amber-600 text-amber-950 shadow-sm'
-                  : 'bg-slate-50 hover:bg-amber-50 border-slate-200 text-slate-900'
-              }"
-              style="min-inline-size: 0;"
-            >
-              <span aria-hidden="true">${escapeHtml(emoji)}</span>
-            </button>
+            <div class="bg-slate-50/90 rounded-xl p-2.5 border border-slate-200/90 flex flex-col gap-2">
+              <p class="text-xs font-extrabold uppercase tracking-wider text-slate-600 px-0.5">
+                ${escapeHtml(group.title)}
+              </p>
+              <div class="grid grid-cols-6 gap-1.5">
+                ${buttonsHtml}
+              </div>
+            </div>
           `;
         }).join('');
       }
@@ -2386,86 +2691,95 @@
 
         const editingId = document.getElementById('prod-input-id')?.value || '';
 
-        const sectionsHtml = PRODUCT_CATEGORIES.map((cat) => {
-          const items = StateManager.products.filter((p) => p.category === cat.id);
-          if (items.length === 0) return '';
+        const sectionsHtml = StateManager.categories
+          .map((cat) => {
+            // Filter by category and sort alphabetically A-Z by product name (pt-PT)
+            const items = StateManager.products
+              .filter((p) => p.category === cat.id)
+              .sort((a, b) => comparePortugueseAlpha(a.name, b.name));
 
-          const badgeStyle = CATEGORY_BADGE_STYLES[cat.id] || CATEGORY_BADGE_STYLES.Outros;
+            if (items.length === 0) return '';
 
-          const rowsHtml = items
-            .map((prod) => {
-              const isBeingEdited = editingId === prod.id;
-              const isKg = prod.unit === 'kg';
-              return `
-                <div class="p-3.5 sm:px-5 flex flex-wrap items-center justify-between gap-3 transition-colors ${
-                  isBeingEdited ? 'bg-amber-50/90' : 'hover:bg-slate-50/80'
-                }">
-                  <div class="flex items-center gap-3.5 min-w-0 flex-1">
-                    <span class="text-3xl sm:text-4xl leading-none shrink-0 select-none" aria-hidden="true">
-                      ${escapeHtml(prod.emoji)}
-                    </span>
-                    <div class="min-w-0 flex-1">
-                      <div class="flex flex-wrap items-center gap-2">
-                        <p class="font-extrabold text-slate-900 text-base sm:text-lg leading-snug">
-                          ${escapeHtml(prod.name)}
+            const badgeStyle = StateManager.getCategoryBadgeClasses(cat.id);
+
+            const rowsHtml = items
+              .map((prod) => {
+                const isBeingEdited = editingId === prod.id;
+                const isKg = prod.unit === 'kg';
+                return `
+                  <div class="p-3.5 sm:px-5 flex flex-wrap items-center justify-between gap-3 transition-colors ${
+                    isBeingEdited ? 'bg-amber-50/90' : 'hover:bg-slate-50/80'
+                  }">
+                    <div class="flex items-center gap-3.5 min-w-0 flex-1">
+                      <span class="text-3xl sm:text-4xl leading-none shrink-0 select-none" aria-hidden="true">
+                        ${escapeHtml(prod.emoji)}
+                      </span>
+                      <div class="min-w-0 flex-1">
+                        <div class="flex flex-wrap items-center gap-2">
+                          <p class="font-extrabold text-slate-900 text-base sm:text-lg leading-snug">
+                            ${escapeHtml(prod.name)}
+                          </p>
+                          <span class="px-2 py-0.5 text-xs font-bold rounded-md border ${badgeStyle}">
+                            ${escapeHtml(cat.label)}
+                          </span>
+                          ${
+                            isKg
+                              ? '<span class="px-2 py-0.5 text-xs font-extrabold rounded-md bg-teal-100 text-teal-900 border border-teal-300">⚖️ Venda ao Peso (€/kg)</span>'
+                              : ''
+                          }
+                          ${
+                            isBeingEdited
+                              ? '<span class="px-2 py-0.5 text-xs font-extrabold rounded-md bg-amber-600 text-white">Em edição</span>'
+                              : ''
+                          }
+                        </div>
+                        <p class="text-sm font-black ${isKg ? 'text-teal-800' : 'text-amber-800'} mt-0.5">
+                          ${formatProductRate(prod.price, prod.unit)}
                         </p>
-                        ${
-                          isKg
-                            ? '<span class="px-2 py-0.5 text-xs font-extrabold rounded-md bg-teal-100 text-teal-900 border border-teal-300">⚖️ Venda ao Peso (€/kg)</span>'
-                            : ''
-                        }
-                        ${
-                          isBeingEdited
-                            ? '<span class="px-2 py-0.5 text-xs font-extrabold rounded-md bg-amber-600 text-white">Em edição</span>'
-                            : ''
-                        }
                       </div>
-                      <p class="text-sm font-black ${isKg ? 'text-teal-800' : 'text-amber-800'} mt-0.5">
-                        ${formatProductRate(prod.price, prod.unit)}
-                      </p>
+                    </div>
+
+                    <div class="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
+                      <button
+                        type="button"
+                        data-edit-product="${escapeHtml(prod.id)}"
+                        class="row-action-btn flex-1 sm:flex-none rounded-xl font-extrabold text-sm bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 px-4 py-2.5 inline-flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+                      >
+                        <span aria-hidden="true">✏️</span>
+                        <span>Editar</span>
+                      </button>
+                      <button
+                        type="button"
+                        data-delete-product="${escapeHtml(prod.id)}"
+                        class="row-action-btn flex-1 sm:flex-none rounded-xl font-extrabold text-sm bg-red-50 hover:bg-red-100 text-red-800 border border-red-200 px-4 py-2.5 inline-flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+                      >
+                        <span aria-hidden="true">🗑️</span>
+                        <span>Apagar</span>
+                      </button>
                     </div>
                   </div>
+                `;
+              })
+              .join('');
 
-                  <div class="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
-                    <button
-                      type="button"
-                      data-edit-product="${escapeHtml(prod.id)}"
-                      class="row-action-btn flex-1 sm:flex-none rounded-xl font-extrabold text-sm bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 px-4 py-2.5 inline-flex items-center justify-center gap-1.5 active:scale-95 transition-all"
-                    >
-                      <span aria-hidden="true">✏️</span>
-                      <span>Editar</span>
-                    </button>
-                    <button
-                      type="button"
-                      data-delete-product="${escapeHtml(prod.id)}"
-                      class="row-action-btn flex-1 sm:flex-none rounded-xl font-extrabold text-sm bg-red-50 hover:bg-red-100 text-red-800 border border-red-200 px-4 py-2.5 inline-flex items-center justify-center gap-1.5 active:scale-95 transition-all"
-                    >
-                      <span aria-hidden="true">🗑️</span>
-                      <span>Apagar</span>
-                    </button>
+            return `
+              <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="bg-slate-50 px-4 sm:px-5 py-3 border-b border-slate-200 flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="text-xl leading-none" aria-hidden="true">${escapeHtml(cat.emoji)}</span>
+                    <h4 class="font-extrabold text-slate-900 text-base">${escapeHtml(cat.label)}</h4>
                   </div>
+                  <span class="px-2.5 py-0.5 text-xs font-extrabold rounded-full border ${badgeStyle}">
+                    ${items.length} ${items.length === 1 ? 'item' : 'itens'} (A–Z)
+                  </span>
                 </div>
-              `;
-            })
-            .join('');
-
-          return `
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-              <div class="bg-slate-50 px-4 sm:px-5 py-3 border-b border-slate-200 flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                  <span class="text-xl leading-none" aria-hidden="true">${escapeHtml(cat.emoji)}</span>
-                  <h4 class="font-extrabold text-slate-900 text-base">${escapeHtml(cat.label)}</h4>
+                <div class="divide-y divide-slate-200/80">
+                  ${rowsHtml}
                 </div>
-                <span class="px-2.5 py-0.5 text-xs font-extrabold rounded-full border ${badgeStyle}">
-                  ${items.length} ${items.length === 1 ? 'item' : 'itens'}
-                </span>
               </div>
-              <div class="divide-y divide-slate-200/80">
-                ${rowsHtml}
-              </div>
-            </div>
-          `;
-        }).join('');
+            `;
+          })
+          .join('');
 
         container.innerHTML = sectionsHtml;
       }
@@ -2494,8 +2808,8 @@
         }
         if (emojiInput) emojiInput.value = '🌰';
 
-        const defaultCatRadio = document.getElementById('cat-radio-comida');
-        if (defaultCatRadio) defaultCatRadio.checked = true;
+        const defaultCat = StateManager.categories[0] ? StateManager.categories[0].id : 'Comida';
+        renderProductCategoryRadios(defaultCat);
 
         const defaultUnitRadio = document.getElementById('unit-radio-un');
         if (defaultUnitRadio) defaultUnitRadio.checked = true;
@@ -2543,12 +2857,9 @@
         }
         if (emojiInput) emojiInput.value = prod.emoji || '🍂';
 
-        const radioToSelect = document.querySelector(
-          `input[name="product_category"][value="${CSS.escape(prod.category)}"]`
-        );
-        if (radioToSelect) {
-          radioToSelect.checked = true;
-        }
+        // Ensure product's category exists in categories list and select its radio pill
+        StateManager.addCategory(prod.category);
+        renderProductCategoryRadios(prod.category);
 
         const unitRadioToSelect = document.querySelector(
           `input[name="product_unit"][value="${prod.unit === 'kg' ? 'kg' : 'un'}"]`
@@ -3052,6 +3363,7 @@
 
       function refreshAllViews() {
         renderCategoryFilters();
+        renderProductCategoryRadios();
         renderProductGrid();
         renderInventoryList();
         renderCart();
@@ -3071,6 +3383,7 @@
               StateManager.activeView = targetView;
               renderNavigation();
               if (targetView === 'products') {
+                renderProductCategoryRadios();
                 renderEmojiPicker();
                 renderInventoryList();
               } else if (targetView === 'report') {
@@ -3407,6 +3720,7 @@
         const prodNameError = document.getElementById('prod-name-error');
         const prodPriceError = document.getElementById('prod-price-error');
         const prodManagerForm = document.getElementById('product-manager-form');
+        const prodCategoryRadios = document.getElementById('product-category-radios');
         const cancelEditBtn = document.getElementById('cancel-edit-product-btn');
         const inventoryListContainer = document.getElementById('inventory-list-container');
         const deleteProductDialog = document.getElementById('confirm-delete-product-dialog');
@@ -3414,9 +3728,127 @@
         const restoreDefaultsBtn = document.getElementById('restore-defaults-btn');
         const restoreDefaultsDialog = document.getElementById('confirm-restore-defaults-dialog');
 
+        // Custom Category Modal Elements
+        const openNewCategoryBtn = document.getElementById('open-new-category-btn');
+        const newCategoryDialog = document.getElementById('new-category-dialog');
+        const newCategoryForm = document.getElementById('new-category-form');
+        const newCatNameInput = document.getElementById('new-cat-name-input');
+        const newCatEmojiInput = document.getElementById('new-cat-emoji-input');
+        const newCatNameError = document.getElementById('new-cat-name-error');
+        const newCatColorPicker = document.getElementById('new-cat-color-picker');
+        const closeNewCategoryBtn = document.getElementById('close-new-category-btn');
+        const cancelNewCategoryBtn = document.getElementById('cancel-new-category-btn');
+
         document.querySelectorAll('input[name="product_unit"]').forEach((radio) => {
           radio.addEventListener('change', updateProductFormUnitUI);
         });
+
+        if (prodCategoryRadios) {
+          prodCategoryRadios.addEventListener('change', (e) => {
+            if (e.target && e.target.name === 'product_category') {
+              StateManager.selectedProductFormCategory = e.target.value;
+            }
+          });
+        }
+
+        if (openNewCategoryBtn && newCategoryDialog) {
+          openNewCategoryBtn.addEventListener('click', () => {
+            if (newCatNameInput) {
+              newCatNameInput.value = '';
+              newCatNameInput.removeAttribute('aria-invalid');
+            }
+            const nextPalette =
+              CATEGORY_COLOR_PALETTE[StateManager.categories.length % CATEGORY_COLOR_PALETTE.length];
+            StateManager.newCategorySelectedColor = nextPalette ? nextPalette.key : 'amber';
+            if (newCatEmojiInput) newCatEmojiInput.value = '🏷️';
+            if (newCatNameError) newCatNameError.classList.add('hidden');
+            renderNewCategoryColorPicker();
+            newCategoryDialog.showModal();
+          });
+        }
+
+        document.querySelectorAll('.suggest-cat-btn').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const catName = btn.getAttribute('data-suggest-cat') || '';
+            const catEmoji = btn.getAttribute('data-suggest-emoji') || '🏷️';
+            const catColor = btn.getAttribute('data-suggest-color') || 'amber';
+            if (newCatNameInput) {
+              newCatNameInput.value = catName;
+              newCatNameInput.removeAttribute('aria-invalid');
+            }
+            if (newCatEmojiInput) newCatEmojiInput.value = catEmoji;
+            if (newCatNameError) newCatNameError.classList.add('hidden');
+            StateManager.newCategorySelectedColor = catColor;
+            renderNewCategoryColorPicker();
+          });
+        });
+
+        if (newCatNameInput) {
+          newCatNameInput.addEventListener('input', () => {
+            if (newCatNameError) newCatNameError.classList.add('hidden');
+            newCatNameInput.removeAttribute('aria-invalid');
+            const val = newCatNameInput.value.trim();
+            if (val) {
+              const inferred = inferCategoryMeta(val, StateManager.categories.length);
+              if (newCatEmojiInput && (newCatEmojiInput.value === '🏷️' || !newCatEmojiInput.value.trim())) {
+                newCatEmojiInput.value = inferred.emoji;
+              }
+            }
+          });
+        }
+
+        if (newCatColorPicker) {
+          newCatColorPicker.addEventListener('click', (e) => {
+            const btn = e.target.closest('button[data-cat-color]');
+            if (!btn) return;
+            const colorKey = btn.getAttribute('data-cat-color');
+            if (colorKey) {
+              StateManager.newCategorySelectedColor = colorKey;
+              renderNewCategoryColorPicker();
+            }
+          });
+        }
+
+        if (closeNewCategoryBtn && newCategoryDialog) {
+          closeNewCategoryBtn.addEventListener('click', () => newCategoryDialog.close());
+        }
+        if (cancelNewCategoryBtn && newCategoryDialog) {
+          cancelNewCategoryBtn.addEventListener('click', () => newCategoryDialog.close());
+        }
+
+        if (newCategoryForm && newCategoryDialog) {
+          newCategoryForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const rawName = newCatNameInput ? newCatNameInput.value.trim() : '';
+            if (!rawName || rawName.toLowerCase() === 'todos') {
+              if (newCatNameError) newCatNameError.classList.remove('hidden');
+              if (newCatNameInput) {
+                newCatNameInput.setAttribute('aria-invalid', 'true');
+                newCatNameInput.focus();
+              }
+              return;
+            }
+
+            const chosenEmoji = newCatEmojiInput ? newCatEmojiInput.value.trim() : '';
+            const createdCat = StateManager.addCategory(
+              rawName,
+              chosenEmoji,
+              StateManager.newCategorySelectedColor
+            );
+
+            newCategoryDialog.close();
+
+            if (createdCat) {
+              renderProductCategoryRadios(createdCat.id);
+              renderCategoryFilters();
+              renderInventoryList();
+              showToast(
+                `Categoria "${createdCat.label}" criada!`,
+                'Já se encontra selecionada no formulário e disponível na Caixa.'
+              );
+            }
+          });
+        }
 
         if (emojiGrid && prodEmojiInput) {
           emojiGrid.addEventListener('click', (e) => {
@@ -3712,6 +4144,7 @@
         StateManager.init();
         renderNavigation();
         renderCategoryFilters();
+        renderProductCategoryRadios();
         renderProductGrid();
         renderCart();
         renderEmojiPicker();
