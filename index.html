@@ -64,7 +64,8 @@
     /* Compact quantity stepper, emoji picker & row action buttons still strictly >= 48x48px (>= 44px WCAG 2.5.5) */
     .qty-btn,
     .emoji-pick-btn,
-    .row-action-btn {
+    .row-action-btn,
+    .preset-weight-btn {
       min-block-size: 48px;
       min-inline-size: 48px;
     }
@@ -130,14 +131,16 @@
     }
 
     /* Radio pill checked & focus-visible styling */
-    .cat-radio-input:checked + .cat-radio-label {
+    .cat-radio-input:checked + .cat-radio-label,
+    .unit-radio-input:checked + .unit-radio-label {
       background-color: #d97706;
       color: #ffffff;
       border-color: #9a3412;
       box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
     }
 
-    .cat-radio-input:checked + .cat-radio-label::after {
+    .cat-radio-input:checked + .cat-radio-label::after,
+    .unit-radio-input:checked + .unit-radio-label::after {
       content: "";
       position: absolute;
       inset: auto 0.75rem 0.2rem;
@@ -145,7 +148,8 @@
       border-radius: 9999px;
     }
 
-    .cat-radio-input:focus-visible + .cat-radio-label {
+    .cat-radio-input:focus-visible + .cat-radio-label,
+    .unit-radio-input:focus-visible + .unit-radio-label {
       outline: 3px solid #ea580c;
       outline-offset: 2px;
     }
@@ -540,7 +544,7 @@
                   Adicionar Novo Produto
                 </h2>
                 <p id="product-form-subtitle" class="text-xs sm:text-sm text-slate-500">
-                  Adicione bens doados ou ajuste preços a qualquer momento.
+                  Adicione bens doados à unidade ou vendidos ao peso (€/kg).
                 </p>
               </div>
             </div>
@@ -558,7 +562,50 @@
           <form id="product-manager-form" aria-labelledby="product-form-heading" class="flex flex-col gap-4" novalidate>
             <input type="hidden" id="prod-input-id" name="product_id" value="" />
 
-            <!-- Row 1: Nome do Produto & Preço em € -->
+            <!-- Row 1: Tipo de Venda (À Unidade vs Ao Peso €/kg) -->
+            <fieldset class="border-0 p-0 m-0">
+              <legend class="block text-sm font-extrabold text-slate-800 mb-1.5">
+                Modo de Venda <span class="text-red-600" aria-hidden="true">*</span>
+              </legend>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div>
+                  <input
+                    type="radio"
+                    id="unit-radio-un"
+                    name="product_unit"
+                    value="un"
+                    checked
+                    class="visually-hidden unit-radio-input"
+                  />
+                  <label
+                    for="unit-radio-un"
+                    class="unit-radio-label relative cursor-pointer w-full min-h-[56px] rounded-xl border-2 border-slate-300 bg-slate-50 hover:bg-amber-50 font-extrabold text-sm sm:text-base text-slate-800 flex items-center justify-center gap-2.5 px-4 py-2.5 transition-all select-none"
+                  >
+                    <span class="text-xl leading-none" aria-hidden="true">🔢</span>
+                    <span>À Unidade (€ / un.)</span>
+                  </label>
+                </div>
+
+                <div>
+                  <input
+                    type="radio"
+                    id="unit-radio-kg"
+                    name="product_unit"
+                    value="kg"
+                    class="visually-hidden unit-radio-input"
+                  />
+                  <label
+                    for="unit-radio-kg"
+                    class="unit-radio-label relative cursor-pointer w-full min-h-[56px] rounded-xl border-2 border-slate-300 bg-slate-50 hover:bg-amber-50 font-extrabold text-sm sm:text-base text-slate-800 flex items-center justify-center gap-2.5 px-4 py-2.5 transition-all select-none"
+                  >
+                    <span class="text-xl leading-none" aria-hidden="true">⚖️</span>
+                    <span>Ao Peso (€ / kg — Fruta, Legumes, etc.)</span>
+                  </label>
+                </div>
+              </div>
+            </fieldset>
+
+            <!-- Row 2: Nome do Produto & Preço (€ ou €/kg) -->
             <div class="grid grid-cols-1 sm:grid-cols-12 gap-4">
               <div class="sm:col-span-8">
                 <label for="prod-input-name" class="block text-sm font-extrabold text-slate-800 mb-1">
@@ -570,7 +617,7 @@
                   name="product_name"
                   required
                   maxlength="60"
-                  placeholder="Ex: Quiche de Legumes, Bolo de Maçã..."
+                  placeholder="Ex: Maçãs Reineta, Abóbora, Cenouras, Bolo..."
                   enterkeyhint="next"
                   aria-describedby="prod-name-error"
                   class="w-full rounded-xl border-2 border-slate-300 bg-white px-3.5 py-2.5 font-bold text-slate-900 focus:border-amber-600 focus:outline-none"
@@ -581,8 +628,8 @@
               </div>
 
               <div class="sm:col-span-4">
-                <label for="prod-input-price" class="block text-sm font-extrabold text-slate-800 mb-1">
-                  Preço em € <span class="text-red-600" aria-hidden="true">*</span>
+                <label id="prod-price-label" for="prod-input-price" class="block text-sm font-extrabold text-slate-800 mb-1">
+                  Preço por Unidade (€) <span class="text-red-600" aria-hidden="true">*</span>
                 </label>
                 <div class="relative">
                   <input
@@ -594,11 +641,13 @@
                     min="0.01"
                     required
                     placeholder="1,50"
-                  enterkeyhint="done"
+                    enterkeyhint="done"
                     aria-describedby="prod-price-error"
-                    class="w-full rounded-xl border-2 border-slate-300 bg-white px-3.5 py-2.5 pr-9 font-extrabold text-slate-900 focus:border-amber-600 focus:outline-none"
+                    class="w-full rounded-xl border-2 border-slate-300 bg-white px-3.5 py-2.5 pr-14 font-extrabold text-slate-900 focus:border-amber-600 focus:outline-none"
                   />
-                  <span class="absolute right-3.5 top-1/2 -translate-y-1/2 font-extrabold text-slate-500 pointer-events-none">€</span>
+                  <span id="prod-price-suffix" class="absolute right-3.5 top-1/2 -translate-y-1/2 font-extrabold text-slate-500 pointer-events-none text-sm">
+                    €
+                  </span>
                 </div>
                 <p id="prod-price-error" class="text-xs font-bold text-red-600 mt-1 hidden">
                   Indique um preço válido superior a 0,00 €.
@@ -606,7 +655,7 @@
               </div>
             </div>
 
-            <!-- Row 2: Categoria (4 Visible Accessible Radio Pills) -->
+            <!-- Row 3: Categoria (4 Visible Accessible Radio Pills) -->
             <fieldset class="border-0 p-0 m-0">
               <legend class="block text-sm font-extrabold text-slate-800 mb-1.5">
                 Categoria <span class="text-red-600" aria-hidden="true">*</span>
@@ -660,7 +709,7 @@
                     class="cat-radio-label relative cursor-pointer w-full min-h-[56px] rounded-xl border-2 border-slate-300 bg-slate-50 hover:bg-amber-50 font-extrabold text-sm sm:text-base text-slate-800 flex items-center justify-center gap-2 px-3 py-2.5 transition-all select-none"
                   >
                     <span class="text-xl leading-none" aria-hidden="true">🍎</span>
-                    <span>Fruta</span>
+                    <span>Fruta / Hortícolas</span>
                   </label>
                 </div>
 
@@ -683,7 +732,7 @@
               </div>
             </fieldset>
 
-            <!-- Row 3: Emoji Picker (12 Quick-Tap Emojis + Custom Emoji Input) -->
+            <!-- Row 4: Emoji Picker (16 Quick-Tap Emojis including Fruit/Veg + Custom Emoji Input) -->
             <div>
               <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5">
                 <label for="prod-input-emoji" class="text-sm font-extrabold text-slate-800">
@@ -699,12 +748,12 @@
                   id="emoji-picker-grid"
                   role="group"
                   aria-label="Escolher emoji rápido"
-                  class="grid grid-cols-6 sm:grid-cols-12 gap-1.5 flex-1"
+                  class="grid grid-cols-8 sm:grid-cols-8 gap-1.5 flex-1"
                 >
                   <!-- Populated dynamically by JS -->
                 </div>
 
-                <div class="flex items-center gap-2 sm:w-40 shrink-0">
+                <div class="flex items-center gap-2 sm:w-36 shrink-0">
                   <input
                     type="text"
                     id="prod-input-emoji"
@@ -718,7 +767,7 @@
               </div>
             </div>
 
-            <!-- Row 4: Submit Button ("Guardar Produto") -->
+            <!-- Row 5: Submit Button ("Guardar Produto") -->
             <div class="pt-1 flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2.5">
               <button
                 type="submit"
@@ -757,7 +806,7 @@
           <div>
             <h3 class="font-extrabold text-slate-800 text-base">Repor Catálogo Predefinido</h3>
             <p class="text-xs sm:text-sm text-slate-500">
-              Restaura os 9 produtos originais da Feira de Outono (Castanhas, Bolo, Pão com Chouriço, Sopa, etc.).
+              Restaura os produtos originais da Feira de Outono (incluindo fruta e legumes ao peso).
             </p>
           </div>
           <button
@@ -824,8 +873,8 @@
             <p id="kpi-total-items" class="text-3xl sm:text-4xl font-black text-amber-700 tracking-tight">
               0
             </p>
-            <p class="text-xs font-semibold text-slate-500 mt-1">
-              Unidades individuais entregues
+            <p id="kpi-total-items-sub" class="text-xs font-semibold text-slate-500 mt-1">
+              Unidades e pesagens entregues
             </p>
           </div>
         </div>
@@ -991,6 +1040,137 @@
       </button>
     </div>
   </div>
+
+  <!-- MODAL 0: "⚖️ Pesagem de Produto" (Weight Calculator Modal for €/kg items) -->
+  <dialog
+    id="weight-item-dialog"
+    closedby="any"
+    aria-labelledby="weight-item-title"
+    class="w-[min(94vw,30rem)] rounded-2xl bg-white p-0 shadow-2xl border-2 border-emerald-600 text-slate-900"
+  >
+    <div class="bg-gradient-to-r from-emerald-800 to-teal-700 text-white px-5 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <span id="weight-dialog-emoji" class="text-3xl leading-none" aria-hidden="true">⚖️</span>
+        <div>
+          <h2 id="weight-item-title" class="text-lg font-extrabold leading-tight">
+            Pesar Produto
+          </h2>
+          <p id="weight-item-rate" class="text-xs font-bold text-emerald-100">
+            Preço: 0,00 € / kg
+          </p>
+        </div>
+      </div>
+      <button
+        type="button"
+        id="close-weight-dialog-btn"
+        aria-label="Fechar janela"
+        class="rounded-xl bg-black/20 hover:bg-black/35 text-white font-bold px-3 py-1.5 text-lg"
+        style="min-block-size: 44px; min-inline-size: 44px;"
+      >
+        ✕
+      </button>
+    </div>
+
+    <form id="weight-item-form" class="p-5 flex flex-col gap-4" novalidate>
+      <!-- Quick-Tap Weight Buttons -->
+      <div>
+        <span class="block text-xs font-extrabold uppercase tracking-wider text-slate-600 mb-2">
+          Pesos Rápidos (toque para preencher):
+        </span>
+        <div class="grid grid-cols-4 sm:grid-cols-7 gap-1.5" role="group" aria-label="Pesos rápidos">
+          <button type="button" data-preset-grams="100" class="preset-weight-btn rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 font-extrabold text-xs sm:text-sm text-emerald-950 py-2 active:scale-95 transition-all" style="min-inline-size: 0;">100g</button>
+          <button type="button" data-preset-grams="250" class="preset-weight-btn rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 font-extrabold text-xs sm:text-sm text-emerald-950 py-2 active:scale-95 transition-all" style="min-inline-size: 0;">250g</button>
+          <button type="button" data-preset-grams="500" class="preset-weight-btn rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 font-extrabold text-xs sm:text-sm text-emerald-950 py-2 active:scale-95 transition-all" style="min-inline-size: 0;">500g</button>
+          <button type="button" data-preset-grams="750" class="preset-weight-btn rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 font-extrabold text-xs sm:text-sm text-emerald-950 py-2 active:scale-95 transition-all" style="min-inline-size: 0;">750g</button>
+          <button type="button" data-preset-grams="1000" class="preset-weight-btn rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 font-extrabold text-xs sm:text-sm text-emerald-950 py-2 active:scale-95 transition-all" style="min-inline-size: 0;">1 kg</button>
+          <button type="button" data-preset-grams="1500" class="preset-weight-btn rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 font-extrabold text-xs sm:text-sm text-emerald-950 py-2 active:scale-95 transition-all" style="min-inline-size: 0;">1,5 kg</button>
+          <button type="button" data-preset-grams="2000" class="preset-weight-btn rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 font-extrabold text-xs sm:text-sm text-emerald-950 py-2 active:scale-95 transition-all" style="min-inline-size: 0;">2 kg</button>
+        </div>
+      </div>
+
+      <!-- Synchronized Dual Inputs: Gramas (g) OR Quilogramas (kg) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label for="weight-input-grams" class="block text-sm font-extrabold text-slate-800 mb-1">
+            Peso em Gramas (g)
+          </label>
+          <div class="relative">
+            <input
+              type="number"
+              id="weight-input-grams"
+              name="weight_grams"
+              inputmode="numeric"
+              step="1"
+              min="1"
+              autofocus
+              placeholder="Ex: 350"
+              enterkeyhint="done"
+              aria-describedby="weight-input-error"
+              class="w-full rounded-xl border-2 border-slate-300 px-3.5 py-2.5 pr-9 font-black text-xl text-slate-900 focus:border-emerald-600 focus:outline-none"
+            />
+            <span class="absolute right-3.5 top-1/2 -translate-y-1/2 font-extrabold text-slate-500 pointer-events-none">g</span>
+          </div>
+        </div>
+
+        <div>
+          <label for="weight-input-kg" class="block text-sm font-extrabold text-slate-800 mb-1">
+            Ou em Quilos (kg)
+          </label>
+          <div class="relative">
+            <input
+              type="number"
+              id="weight-input-kg"
+              name="weight_kg"
+              inputmode="decimal"
+              step="0.001"
+              min="0.001"
+              placeholder="Ex: 0,350"
+              enterkeyhint="done"
+              aria-describedby="weight-input-error"
+              class="w-full rounded-xl border-2 border-slate-300 px-3.5 py-2.5 pr-11 font-black text-xl text-slate-900 focus:border-emerald-600 focus:outline-none"
+            />
+            <span class="absolute right-3.5 top-1/2 -translate-y-1/2 font-extrabold text-slate-500 pointer-events-none">kg</span>
+          </div>
+        </div>
+      </div>
+
+      <p id="weight-input-error" class="text-xs font-bold text-red-600 -mt-2 hidden">
+        Por favor, introduza um peso válido superior a 0 g.
+      </p>
+
+      <!-- Live Price Calculation Banner -->
+      <div class="bg-emerald-950 text-white rounded-xl p-4 flex items-center justify-between shadow-inner">
+        <div>
+          <span class="block text-xs font-bold uppercase tracking-wider text-emerald-300">
+            Valor Calculado
+          </span>
+          <span id="weight-calc-formula" class="text-xs font-medium text-emerald-100">
+            0,000 kg × 0,00 € / kg
+          </span>
+        </div>
+        <span id="weight-calc-total" class="text-2xl sm:text-3xl font-black text-white">
+          0,00 €
+        </span>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2.5 pt-1">
+        <button
+          type="button"
+          id="cancel-weight-item-btn"
+          class="rounded-xl font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 px-4 py-3"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          id="submit-weight-item-btn"
+          class="rounded-xl font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 border border-emerald-700 px-4 py-3 shadow-md"
+        >
+          + Adicionar ao Cesto
+        </button>
+      </div>
+    </form>
+  </dialog>
 
   <!-- MODAL 1: "+ Valor Livre" (Custom Item Modal) -->
   <dialog
@@ -1161,7 +1341,7 @@
         Repor Produtos Iniciais?
       </h2>
       <p class="text-sm text-slate-600">
-        O catálogo será restaurado para os 9 produtos originais da Feira de Outono. As vendas já registadas não serão afetadas.
+        O catálogo será restaurado para os produtos originais da Feira de Outono. As vendas já registadas não serão afetadas.
       </p>
       <form method="dialog" class="grid grid-cols-2 gap-2.5 w-full pt-2">
         <button
@@ -1304,27 +1484,29 @@
         { id: 'Todos', label: 'Todos', emoji: '🍂' },
         { id: 'Comida', label: 'Comida', emoji: '🍲' },
         { id: 'Bebidas', label: 'Bebidas', emoji: '🧃' },
-        { id: 'Fruta', label: 'Fruta', emoji: '🍎' },
+        { id: 'Fruta', label: 'Fruta / Hortícolas', emoji: '🍎' },
         { id: 'Outros', label: 'Outros', emoji: '🍯' }
       ];
 
       const PRODUCT_CATEGORIES = CATEGORIES.filter((c) => c.id !== 'Todos');
 
       const QUICK_EMOJIS = [
-        '🌰', '🍰', '🥖', '🥣', '🧃', '💧',
-        '☕', '🍎', '🍯', '🥧', '🍪', '🎃'
+        '🌰', '🍰', '🥖', '🥣', '🧃', '💧', '☕', '🍎',
+        '🍐', '🍊', '🎃', '🥕', '🥔', '🥬', '🍯', '🥧'
       ];
 
       const DEFAULT_PRODUCTS = [
-        { id: 'prod_castanhas', name: 'Castanhas Assadas', price: 2.00, category: 'Comida', emoji: '🌰' },
-        { id: 'prod_bolo', name: 'Fatia de Bolo', price: 1.00, category: 'Comida', emoji: '🍰' },
-        { id: 'prod_pao_chourico', name: 'Pão com Chouriço', price: 2.50, category: 'Comida', emoji: '🥖' },
-        { id: 'prod_sopa', name: 'Sopa da Pedra / Caldo Verde', price: 2.00, category: 'Comida', emoji: '🥣' },
-        { id: 'prod_sumo', name: 'Sumo Natural', price: 1.00, category: 'Bebidas', emoji: '🧃' },
-        { id: 'prod_agua', name: 'Água', price: 0.50, category: 'Bebidas', emoji: '💧' },
-        { id: 'prod_cafe', name: 'Café', price: 0.80, category: 'Bebidas', emoji: '☕' },
-        { id: 'prod_fruta', name: 'Maçãs / Fruta da Época', price: 0.50, category: 'Fruta', emoji: '🍎' },
-        { id: 'prod_compota', name: 'Compota Caseira', price: 3.00, category: 'Outros', emoji: '🍯' }
+        { id: 'prod_castanhas', name: 'Castanhas Assadas', price: 2.00, category: 'Comida', emoji: '🌰', unit: 'un' },
+        { id: 'prod_bolo', name: 'Fatia de Bolo', price: 1.00, category: 'Comida', emoji: '🍰', unit: 'un' },
+        { id: 'prod_pao_chourico', name: 'Pão com Chouriço', price: 2.50, category: 'Comida', emoji: '🥖', unit: 'un' },
+        { id: 'prod_sopa', name: 'Sopa da Pedra / Caldo Verde', price: 2.00, category: 'Comida', emoji: '🥣', unit: 'un' },
+        { id: 'prod_sumo', name: 'Sumo Natural', price: 1.00, category: 'Bebidas', emoji: '🧃', unit: 'un' },
+        { id: 'prod_agua', name: 'Água', price: 0.50, category: 'Bebidas', emoji: '💧', unit: 'un' },
+        { id: 'prod_cafe', name: 'Café', price: 0.80, category: 'Bebidas', emoji: '☕', unit: 'un' },
+        { id: 'prod_fruta', name: 'Maçãs / Fruta da Época', price: 0.50, category: 'Fruta', emoji: '🍎', unit: 'un' },
+        { id: 'prod_fruta_peso', name: 'Fruta ao Peso', price: 1.50, category: 'Fruta', emoji: '🍐', unit: 'kg' },
+        { id: 'prod_legumes_peso', name: 'Legumes / Hortícolas ao Peso', price: 1.50, category: 'Fruta', emoji: '🥕', unit: 'kg' },
+        { id: 'prod_compota', name: 'Compota Caseira', price: 3.00, category: 'Outros', emoji: '🍯', unit: 'un' }
       ];
 
       const CATEGORY_BADGE_STYLES = {
@@ -1342,11 +1524,16 @@
         sales: [],
         activeView: 'register',
         activeCategory: 'Todos',
+        // Cart items: { id, name, price, qty, emoji, unit: 'un' | 'kg' }
+        // For unit === 'kg', price is €/kg and qty is weight in kg (e.g., 0.350)
         cart: [],
         selectedBill: null,
         customCashInput: '',
         pendingDeleteProductId: null,
         pendingVoidSaleId: null,
+        // Weight modal active state
+        activeWeightProduct: null,
+        editingCartWeightIndex: null,
 
         init() {
           this.products = this.loadProducts();
@@ -1359,7 +1546,26 @@
             if (raw) {
               const parsed = JSON.parse(raw);
               if (Array.isArray(parsed) && parsed.length > 0) {
-                return parsed;
+                // Ensure backward compatibility with products created before unit ('un'|'kg') existed
+                const normalized = parsed.map((p) => ({
+                  ...p,
+                  unit: p.unit === 'kg' ? 'kg' : 'un'
+                }));
+                // If user still had only the initial 9 items without any kg examples, add the two kg examples automatically
+                const hasKgExample = normalized.some((p) => p.unit === 'kg');
+                const hasDefaultIdsOnly =
+                  normalized.length === 9 &&
+                  normalized.every((p) => DEFAULT_PRODUCTS.some((d) => d.id === p.id));
+                if (!hasKgExample && hasDefaultIdsOnly) {
+                  normalized.splice(
+                    8,
+                    0,
+                    { id: 'prod_fruta_peso', name: 'Fruta ao Peso', price: 1.50, category: 'Fruta', emoji: '🍐', unit: 'kg' },
+                    { id: 'prod_legumes_peso', name: 'Legumes / Hortícolas ao Peso', price: 1.50, category: 'Fruta', emoji: '🥕', unit: 'kg' }
+                  );
+                  this.saveProducts(normalized);
+                }
+                return normalized;
               }
             }
           } catch (err) {
@@ -1410,6 +1616,7 @@
           const cleanPrice = roundCurrency(productData.price);
           const cleanCategory = productData.category || 'Comida';
           const cleanEmoji = (productData.emoji || '').trim() || '🍂';
+          const cleanUnit = productData.unit === 'kg' ? 'kg' : 'un';
 
           if (productData.id) {
             const updatedList = this.products.map((p) =>
@@ -1419,7 +1626,8 @@
                     name: cleanName,
                     price: cleanPrice,
                     category: cleanCategory,
-                    emoji: cleanEmoji
+                    emoji: cleanEmoji,
+                    unit: cleanUnit
                   }
                 : p
             );
@@ -1430,6 +1638,7 @@
                 cartItem.name = cleanName;
                 cartItem.price = cleanPrice;
                 cartItem.emoji = cleanEmoji;
+                cartItem.unit = cleanUnit;
               }
             });
             return 'updated';
@@ -1439,7 +1648,8 @@
               name: cleanName,
               price: cleanPrice,
               category: cleanCategory,
-              emoji: cleanEmoji
+              emoji: cleanEmoji,
+              unit: cleanUnit
             };
             this.saveProducts([...this.products, newProduct]);
             return 'created';
@@ -1456,7 +1666,7 @@
           this.saveProducts(restored);
         },
 
-        // Sales Void & Wipe Operations (Phase 4)
+        // Sales Void & Wipe Operations
         voidSale(saleId) {
           const updated = this.sales.filter((s) => s.saleId !== saleId);
           this.saveSales(updated);
@@ -1466,18 +1676,19 @@
           this.saveSales([]);
         },
 
-        // Report Aggregation Helpers (Phase 4)
+        // Report Aggregation Helpers
         getReportSummary() {
           let totalRevenue = 0;
-          let totalItemsSold = 0;
+          let totalUnitItemsSold = 0;
+          let totalWeightKgSold = 0;
+          let totalLineCount = 0;
           const byProductMap = new Map();
 
-          // Map product IDs and names to emojis from catalog for rich presentation
-          const emojiById = new Map();
-          const emojiByName = new Map();
+          const productById = new Map();
+          const productByName = new Map();
           this.products.forEach((p) => {
-            emojiById.set(p.id, p.emoji);
-            emojiByName.set(p.name.toLowerCase(), p.emoji);
+            productById.set(p.id, p);
+            productByName.set(p.name.toLowerCase(), p);
           });
 
           this.sales.forEach((sale) => {
@@ -1486,31 +1697,44 @@
             items.forEach((item) => {
               const qty = Number(item.qty) || 0;
               const price = Number(item.price) || 0;
-              const lineTotal = roundCurrency(qty * price);
-              totalItemsSold += qty;
+              const catalogMatch =
+                productById.get(item.id) ||
+                productByName.get(String(item.name || '').trim().toLowerCase());
+              const unit = item.unit || (catalogMatch ? catalogMatch.unit : 'un') || 'un';
+              const lineTotal =
+                item.lineTotal !== undefined
+                  ? roundCurrency(item.lineTotal)
+                  : roundCurrency(qty * price);
 
-              const key = (item.name || 'Item Diverso').trim();
+              if (unit === 'kg') {
+                totalWeightKgSold = roundWeight(totalWeightKgSold + qty);
+                totalLineCount += 1;
+              } else {
+                totalUnitItemsSold += qty;
+                totalLineCount += qty;
+              }
+
+              const key = `${(item.name || 'Item Diverso').trim()}__${unit}`;
               const existing = byProductMap.get(key);
               const resolvedEmoji =
-                emojiById.get(item.id) ||
-                emojiByName.get(key.toLowerCase()) ||
-                (String(item.id || '').startsWith('custom_') ? '🏷️' : '🍂');
+                (catalogMatch && catalogMatch.emoji) ||
+                (String(item.id || '').startsWith('custom_') ? '🏷️' : unit === 'kg' ? '⚖️' : '🍂');
 
               if (existing) {
-                existing.qty += qty;
+                existing.qty = unit === 'kg' ? roundWeight(existing.qty + qty) : existing.qty + qty;
                 existing.total = roundCurrency(existing.total + lineTotal);
               } else {
                 byProductMap.set(key, {
-                  name: key,
+                  name: (item.name || 'Item Diverso').trim(),
                   emoji: resolvedEmoji,
-                  qty,
+                  unit,
+                  qty: unit === 'kg' ? roundWeight(qty) : qty,
                   total: lineTotal
                 });
               }
             });
           });
 
-          // Sort by highest revenue descending, then by quantity descending
           const breakdown = Array.from(byProductMap.values()).sort((a, b) => {
             if (b.total !== a.total) return b.total - a.total;
             return b.qty - a.qty;
@@ -1519,16 +1743,38 @@
           return {
             totalRevenue,
             totalSalesCount: this.sales.length,
-            totalItemsSold,
+            totalUnitItemsSold,
+            totalWeightKgSold,
+            totalLineCount,
             breakdown
           };
         },
 
         // Cart Manipulation Methods
-        addToCart(item) {
+        addToCart(item, customWeightKg = null) {
           const unitPrice = roundCurrency(item.price);
+          const itemUnit = item.unit === 'kg' ? 'kg' : 'un';
+
+          if (itemUnit === 'kg') {
+            const weightKg = roundWeight(customWeightKg || 0);
+            if (weightKg <= 0) return;
+            this.cart.push({
+              id: item.id,
+              name: item.name,
+              price: unitPrice,
+              qty: weightKg,
+              unit: 'kg',
+              emoji: item.emoji || '⚖️'
+            });
+            return;
+          }
+
           const existing = this.cart.find(
-            (c) => c.id === item.id && roundCurrency(c.price) === unitPrice && c.name === item.name
+            (c) =>
+              c.unit !== 'kg' &&
+              c.id === item.id &&
+              roundCurrency(c.price) === unitPrice &&
+              c.name === item.name
           );
           if (existing) {
             existing.qty += 1;
@@ -1538,14 +1784,30 @@
               name: item.name,
               price: unitPrice,
               qty: 1,
+              unit: 'un',
               emoji: item.emoji || '🏷️'
             });
+          }
+        },
+
+        updateCartWeight(cartIndex, newWeightKg) {
+          const target = this.cart[cartIndex];
+          if (!target || target.unit !== 'kg') return;
+          const cleanKg = roundWeight(newWeightKg);
+          if (cleanKg <= 0) {
+            this.cart.splice(cartIndex, 1);
+          } else {
+            target.qty = cleanKg;
           }
         },
 
         updateCartQty(cartIndex, delta) {
           const target = this.cart[cartIndex];
           if (!target) return;
+          if (target.unit === 'kg' && delta < 0) {
+            this.cart.splice(cartIndex, 1);
+            return;
+          }
           target.qty += delta;
           if (target.qty <= 0) {
             this.cart.splice(cartIndex, 1);
@@ -1554,18 +1816,29 @@
 
         getCartTotal() {
           return roundCurrency(
-            this.cart.reduce((sum, item) => sum + item.price * item.qty, 0)
+            this.cart.reduce(
+              (sum, item) => sum + roundCurrency(item.price * item.qty),
+              0
+            )
           );
         },
 
         getCartItemCount() {
-          return this.cart.reduce((sum, item) => sum + item.qty, 0);
+          return this.cart.reduce(
+            (sum, item) => sum + (item.unit === 'kg' ? 1 : item.qty),
+            0
+          );
         },
 
-        getProductQtyInCart(productId) {
-          return this.cart
-            .filter((item) => item.id === productId)
-            .reduce((sum, item) => sum + item.qty, 0);
+        getProductSummaryInCart(product) {
+          const matches = this.cart.filter((item) => item.id === product.id);
+          if (matches.length === 0) return null;
+          if (product.unit === 'kg') {
+            const totalKg = roundWeight(matches.reduce((s, i) => s + i.qty, 0));
+            return `${formatWeight(totalKg)} no cesto`;
+          }
+          const totalUn = matches.reduce((s, i) => s + i.qty, 0);
+          return `${totalUn} no cesto`;
         },
 
         getPaymentGiven() {
@@ -1596,9 +1869,31 @@
         return Math.round((Number(val) + Number.EPSILON) * 100) / 100;
       }
 
+      function roundWeight(val) {
+        return Math.round((Number(val) + Number.EPSILON) * 1000) / 1000;
+      }
+
       function formatCurrency(amount) {
         const numeric = Number(amount) || 0;
         return numeric.toFixed(2).replace('.', ',') + ' €';
+      }
+
+      function formatProductRate(price, unit) {
+        const base = formatCurrency(price);
+        return unit === 'kg' ? `${base} / kg` : base;
+      }
+
+      function formatWeight(kgValue) {
+        const kg = roundWeight(kgValue);
+        const grams = Math.round(kg * 1000);
+        if (kg < 1) {
+          return `${grams} g`;
+        }
+        const formattedKg = kg
+          .toFixed(3)
+          .replace(/\.?0+$/, '')
+          .replace('.', ',');
+        return `${formattedKg} kg`;
       }
 
       function formatSaleTime(isoString) {
@@ -1760,11 +2055,11 @@
           .map((product) => {
             const badgeStyle =
               CATEGORY_BADGE_STYLES[product.category] || CATEGORY_BADGE_STYLES.Outros;
-            const inCartQty = StateManager.getProductQtyInCart(product.id);
-            const activeRing =
-              inCartQty > 0
-                ? 'border-amber-500 bg-amber-50/40 ring-2 ring-amber-400/50'
-                : 'border-slate-200/90 bg-white';
+            const isKg = product.unit === 'kg';
+            const inCartSummary = StateManager.getProductSummaryInCart(product);
+            const activeRing = inCartSummary
+              ? 'border-amber-500 bg-amber-50/40 ring-2 ring-amber-400/50'
+              : 'border-slate-200/90 bg-white';
 
             return `
               <button
@@ -1781,9 +2076,14 @@
                       ${escapeHtml(product.category)}
                     </span>
                     ${
-                      inCartQty > 0
+                      isKg
+                        ? '<span class="px-2 py-0.5 text-xs font-extrabold rounded-md bg-teal-100 text-teal-900 border border-teal-300">⚖️ Ao Peso</span>'
+                        : ''
+                    }
+                    ${
+                      inCartSummary
                         ? `<span class="px-2.5 py-0.5 text-xs font-black rounded-full bg-amber-600 text-white shadow-sm">
-                            ${inCartQty} no cesto
+                            ${escapeHtml(inCartSummary)}
                            </span>`
                         : ''
                     }
@@ -1794,8 +2094,12 @@
                   <h3 class="font-extrabold text-slate-900 text-base sm:text-lg leading-snug mb-2">
                     ${escapeHtml(product.name)}
                   </h3>
-                  <div class="inline-flex items-center px-3 py-1 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-950 font-black text-base sm:text-lg">
-                    ${formatCurrency(product.price)}
+                  <div class="inline-flex items-center px-3 py-1 rounded-lg ${
+                    isKg
+                      ? 'bg-teal-600/15 border border-teal-600/30 text-teal-950'
+                      : 'bg-amber-500/15 border border-amber-500/30 text-amber-950'
+                  } font-black text-base sm:text-lg">
+                    ${formatProductRate(product.price, product.unit)}
                   </div>
                 </div>
               </button>
@@ -1867,6 +2171,47 @@
           listContainer.innerHTML = StateManager.cart
             .map((item, idx) => {
               const lineSubtotal = roundCurrency(item.price * item.qty);
+              const isKg = item.unit === 'kg';
+
+              if (isKg) {
+                return `
+                  <div class="py-2.5 flex items-center justify-between gap-2">
+                    <div class="min-w-0 flex-1">
+                      <div class="flex items-center gap-1.5">
+                        <span class="text-lg leading-none" aria-hidden="true">${escapeHtml(item.emoji || '⚖️')}</span>
+                        <p class="font-extrabold text-slate-900 text-sm sm:text-base leading-tight">
+                          ${escapeHtml(item.name)}
+                        </p>
+                      </div>
+                      <p class="text-xs font-bold text-teal-900 mt-0.5">
+                        ⚖️ <strong>${escapeHtml(formatWeight(item.qty))}</strong> × ${formatCurrency(item.price)}/kg = <strong class="text-slate-900">${formatCurrency(lineSubtotal)}</strong>
+                      </p>
+                    </div>
+
+                    <div class="flex items-center gap-1.5 shrink-0">
+                      <button
+                        type="button"
+                        data-edit-cart-weight="${idx}"
+                        aria-label="Alterar peso de ${escapeHtml(item.name)}"
+                        class="qty-btn px-2.5 rounded-xl bg-teal-50 hover:bg-teal-100 active:bg-teal-200 text-teal-950 border border-teal-300 font-extrabold text-xs flex items-center justify-center gap-1 active:scale-95 transition-all"
+                      >
+                        <span aria-hidden="true">⚖️</span>
+                        <span>Peso</span>
+                      </button>
+                      <button
+                        type="button"
+                        data-cart-index="${idx}"
+                        data-qty-delta="-1"
+                        aria-label="Remover ${escapeHtml(item.name)} do cesto"
+                        class="qty-btn rounded-xl bg-slate-100 hover:bg-red-100 active:bg-red-200 text-slate-900 hover:text-red-900 border border-slate-300 font-black text-base flex items-center justify-center active:scale-95 transition-all"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  </div>
+                `;
+              }
+
               return `
                 <div class="py-2.5 flex items-center justify-between gap-2">
                   <div class="min-w-0 flex-1">
@@ -1973,6 +2318,21 @@
       // ==========================================
       // 5. PHASE 3: INVENTORY MANAGER RENDERING
       // ==========================================
+      function updateProductFormUnitUI() {
+        const checkedUnit = document.querySelector('input[name="product_unit"]:checked')?.value || 'un';
+        const priceLabel = document.getElementById('prod-price-label');
+        const priceSuffix = document.getElementById('prod-price-suffix');
+        if (priceLabel) {
+          priceLabel.innerHTML =
+            checkedUnit === 'kg'
+              ? 'Preço por Kg (€/kg) <span class="text-red-600" aria-hidden="true">*</span>'
+              : 'Preço por Unidade (€) <span class="text-red-600" aria-hidden="true">*</span>';
+        }
+        if (priceSuffix) {
+          priceSuffix.textContent = checkedUnit === 'kg' ? '€/kg' : '€';
+        }
+      }
+
       function renderEmojiPicker() {
         const grid = document.getElementById('emoji-picker-grid');
         const emojiInput = document.getElementById('prod-input-emoji');
@@ -2035,6 +2395,7 @@
           const rowsHtml = items
             .map((prod) => {
               const isBeingEdited = editingId === prod.id;
+              const isKg = prod.unit === 'kg';
               return `
                 <div class="p-3.5 sm:px-5 flex flex-wrap items-center justify-between gap-3 transition-colors ${
                   isBeingEdited ? 'bg-amber-50/90' : 'hover:bg-slate-50/80'
@@ -2049,13 +2410,18 @@
                           ${escapeHtml(prod.name)}
                         </p>
                         ${
+                          isKg
+                            ? '<span class="px-2 py-0.5 text-xs font-extrabold rounded-md bg-teal-100 text-teal-900 border border-teal-300">⚖️ Venda ao Peso (€/kg)</span>'
+                            : ''
+                        }
+                        ${
                           isBeingEdited
                             ? '<span class="px-2 py-0.5 text-xs font-extrabold rounded-md bg-amber-600 text-white">Em edição</span>'
                             : ''
                         }
                       </div>
-                      <p class="text-sm font-black text-amber-800 mt-0.5">
-                        ${formatCurrency(prod.price)}
+                      <p class="text-sm font-black ${isKg ? 'text-teal-800' : 'text-amber-800'} mt-0.5">
+                        ${formatProductRate(prod.price, prod.unit)}
                       </p>
                     </div>
                   </div>
@@ -2131,6 +2497,10 @@
         const defaultCatRadio = document.getElementById('cat-radio-comida');
         if (defaultCatRadio) defaultCatRadio.checked = true;
 
+        const defaultUnitRadio = document.getElementById('unit-radio-un');
+        if (defaultUnitRadio) defaultUnitRadio.checked = true;
+        updateProductFormUnitUI();
+
         if (formHeading) formHeading.textContent = 'Adicionar Novo Produto';
         if (formIcon) formIcon.textContent = '➕';
         if (saveBtnText) saveBtnText.textContent = 'Guardar Produto';
@@ -2180,6 +2550,14 @@
           radioToSelect.checked = true;
         }
 
+        const unitRadioToSelect = document.querySelector(
+          `input[name="product_unit"][value="${prod.unit === 'kg' ? 'kg' : 'un'}"]`
+        );
+        if (unitRadioToSelect) {
+          unitRadioToSelect.checked = true;
+        }
+        updateProductFormUnitUI();
+
         if (formHeading) formHeading.textContent = `Editar: ${prod.name}`;
         if (formIcon) formIcon.textContent = '✏️';
         if (saveBtnText) saveBtnText.textContent = 'Guardar Alterações';
@@ -2201,27 +2579,87 @@
       }
 
       // ==========================================
-      // 6. PHASE 4: END-OF-DAY REPORT RENDERING & EXPORTS
+      // 6. WEIGHT MODAL LOGIC ("⚖️ Pesagem")
+      // ==========================================
+      function openWeightModal(product, cartIndexToEdit = null) {
+        const dialog = document.getElementById('weight-item-dialog');
+        const emojiEl = document.getElementById('weight-dialog-emoji');
+        const titleEl = document.getElementById('weight-item-title');
+        const rateEl = document.getElementById('weight-item-rate');
+        const gramsInput = document.getElementById('weight-input-grams');
+        const kgInput = document.getElementById('weight-input-kg');
+        const errorEl = document.getElementById('weight-input-error');
+        const submitBtn = document.getElementById('submit-weight-item-btn');
+
+        if (!dialog || !product) return;
+
+        StateManager.activeWeightProduct = product;
+        StateManager.editingCartWeightIndex = cartIndexToEdit;
+
+        if (emojiEl) emojiEl.textContent = product.emoji || '⚖️';
+        if (titleEl) titleEl.textContent = product.name;
+        if (rateEl) rateEl.textContent = `Preço: ${formatCurrency(product.price)} / kg`;
+        if (errorEl) errorEl.classList.add('hidden');
+
+        if (cartIndexToEdit !== null && StateManager.cart[cartIndexToEdit]) {
+          const existingKg = roundWeight(StateManager.cart[cartIndexToEdit].qty);
+          const existingGrams = Math.round(existingKg * 1000);
+          if (gramsInput) gramsInput.value = String(existingGrams);
+          if (kgInput) kgInput.value = String(existingKg);
+          if (submitBtn) submitBtn.textContent = 'Guardar Peso';
+        } else {
+          if (gramsInput) gramsInput.value = '';
+          if (kgInput) kgInput.value = '';
+          if (submitBtn) submitBtn.textContent = '+ Adicionar ao Cesto';
+        }
+
+        updateWeightLivePreview();
+        dialog.showModal();
+      }
+
+      function updateWeightLivePreview() {
+        const product = StateManager.activeWeightProduct;
+        const kgInput = document.getElementById('weight-input-kg');
+        const formulaEl = document.getElementById('weight-calc-formula');
+        const totalEl = document.getElementById('weight-calc-total');
+        if (!product || !formulaEl || !totalEl) return;
+
+        const kgVal = kgInput && kgInput.value ? roundWeight(Number(kgInput.value)) : 0;
+        const validKg = kgVal > 0 && !Number.isNaN(kgVal) ? kgVal : 0;
+        const linePrice = roundCurrency(validKg * product.price);
+
+        formulaEl.textContent = `${formatWeight(validKg)} × ${formatCurrency(product.price)} / kg`;
+        totalEl.textContent = formatCurrency(linePrice);
+      }
+
+      // ==========================================
+      // 7. PHASE 4: END-OF-DAY REPORT RENDERING & EXPORTS
       // ==========================================
       function renderReportView() {
         const summary = StateManager.getReportSummary();
 
-        // 1. Update KPI Cards
         const revenueEl = document.getElementById('kpi-total-revenue');
         const salesCountEl = document.getElementById('kpi-total-sales');
         const itemsCountEl = document.getElementById('kpi-total-items');
+        const itemsSubEl = document.getElementById('kpi-total-items-sub');
         const salesBadge = document.getElementById('sales-count-badge');
 
         if (revenueEl) revenueEl.textContent = formatCurrency(summary.totalRevenue);
         if (salesCountEl) salesCountEl.textContent = String(summary.totalSalesCount);
-        if (itemsCountEl) itemsCountEl.textContent = String(summary.totalItemsSold);
+        if (itemsCountEl) itemsCountEl.textContent = String(summary.totalLineCount);
+        if (itemsSubEl) {
+          if (summary.totalWeightKgSold > 0) {
+            itemsSubEl.textContent = `${summary.totalUnitItemsSold} un. + ${formatWeight(summary.totalWeightKgSold)} pesados`;
+          } else {
+            itemsSubEl.textContent = 'Unidades individuais entregues';
+          }
+        }
         if (salesBadge) {
           salesBadge.textContent = `${summary.totalSalesCount} ${
             summary.totalSalesCount === 1 ? 'venda' : 'vendas'
           }`;
         }
 
-        // 2. Render "Resumo por Produto" Table
         const emptyState = document.getElementById('breakdown-empty-state');
         const tableRegion = document.getElementById('breakdown-table-region');
         const tbody = document.getElementById('breakdown-table-body');
@@ -2241,6 +2679,13 @@
                   idx === 0
                     ? '<span class="ml-1.5 px-2 py-0.5 text-xs font-extrabold rounded-full bg-amber-100 text-amber-900 border border-amber-300">1.º</span>'
                     : '';
+                const qtyFormatted =
+                  row.unit === 'kg' ? formatWeight(row.qty) : `${row.qty} un.`;
+                const badgeClass =
+                  row.unit === 'kg'
+                    ? 'bg-teal-50 text-teal-900 border-teal-200'
+                    : 'bg-slate-100 text-slate-900 border-slate-200';
+
                 return `
                   <tr class="hover:bg-amber-50/40 transition-colors">
                     <th scope="row" class="py-3.5 px-4 sm:px-6 font-extrabold text-slate-900">
@@ -2251,8 +2696,8 @@
                       </div>
                     </th>
                     <td class="py-3.5 px-4 text-center">
-                      <span class="inline-flex items-center justify-center px-3 py-1 rounded-full font-extrabold text-sm bg-slate-100 text-slate-900 border border-slate-200">
-                        ${row.qty} un.
+                      <span class="inline-flex items-center justify-center px-3 py-1 rounded-full font-extrabold text-sm border ${badgeClass}">
+                        ${escapeHtml(qtyFormatted)}
                       </span>
                     </td>
                     <td class="py-3.5 px-4 sm:px-6 text-right font-black text-emerald-700">
@@ -2265,13 +2710,18 @@
           }
 
           if (tfoot) {
+            const totalQtyLabel =
+              summary.totalWeightKgSold > 0
+                ? `${summary.totalUnitItemsSold} un. + ${formatWeight(summary.totalWeightKgSold)}`
+                : `${summary.totalUnitItemsSold} un.`;
+
             tfoot.innerHTML = `
               <tr>
                 <th scope="row" class="py-3.5 px-4 sm:px-6 uppercase tracking-wider text-xs sm:text-sm text-amber-950">
                   Total Geral
                 </th>
                 <td class="py-3.5 px-4 text-center text-amber-950">
-                  ${summary.totalItemsSold} un.
+                  ${escapeHtml(totalQtyLabel)}
                 </td>
                 <td class="py-3.5 px-4 sm:px-6 text-right text-lg text-emerald-800">
                   ${formatCurrency(summary.totalRevenue)}
@@ -2281,7 +2731,6 @@
           }
         }
 
-        // 3. Render "Histórico de Vendas" (Newest First)
         const historyContainer = document.getElementById('sales-history-container');
         if (!historyContainer) return;
 
@@ -2306,7 +2755,11 @@
             const dateStr = formatSaleDate(sale.timestamp);
             const itemsList = Array.isArray(sale.items) ? sale.items : [];
             const itemsSummary = itemsList
-              .map((i) => `${i.qty}× ${i.name}`)
+              .map((i) =>
+                i.unit === 'kg'
+                  ? `${formatWeight(i.qty)} ${i.name}`
+                  : `${i.qty}× ${i.name}`
+              )
               .join(', ');
 
             const paymentInfo =
@@ -2356,6 +2809,10 @@
       function buildWhatsAppSummaryText() {
         const summary = StateManager.getReportSummary();
         const todayStr = formatSaleDate(new Date().toISOString());
+        const itemsLine =
+          summary.totalWeightKgSold > 0
+            ? `${summary.totalUnitItemsSold} un. + ${formatWeight(summary.totalWeightKgSold)}`
+            : `${summary.totalUnitItemsSold} un.`;
 
         const lines = [
           `🍂 *FEIRA DE OUTONO — FECHO DE CAIXA* 🍂`,
@@ -2363,7 +2820,7 @@
           `────────────────────`,
           `💶 *Receita Total:* *${formatCurrency(summary.totalRevenue)}*`,
           `🧾 *Total de Vendas:* ${summary.totalSalesCount}`,
-          `🌰 *Artigos Vendidos:* ${summary.totalItemsSold} un.`,
+          `🌰 *Artigos Vendidos:* ${itemsLine}`,
           `────────────────────`,
           `📊 *RESUMO POR PRODUTO:*`
         ];
@@ -2372,8 +2829,10 @@
           lines.push(`_(Sem vendas registadas)_`);
         } else {
           summary.breakdown.forEach((item) => {
+            const qtyLabel =
+              item.unit === 'kg' ? formatWeight(item.qty) : `${item.qty}x`;
             lines.push(
-              `${item.emoji} ${item.name}: *${item.qty}x* — *${formatCurrency(item.total)}*`
+              `${item.emoji} ${item.name}: *${qtyLabel}* — *${formatCurrency(item.total)}*`
             );
           });
         }
@@ -2395,7 +2854,7 @@
             return;
           }
         } catch {
-          // Fallback below for older Android WebViews or file:// protocol
+          // Fallback below
         }
 
         const tempArea = document.createElement('textarea');
@@ -2436,24 +2895,24 @@
         const summary = StateManager.getReportSummary();
         const rows = [];
 
-        // Section 1: Summary Breakdown by Product (using ';' delimiter standard in Portuguese Excel)
         rows.push(['FEIRA DE OUTONO - RESUMO POR PRODUTO']);
-        rows.push(['Produto', 'Quantidade Vendida', 'Total (EUR)']);
+        rows.push(['Produto', 'Unidade', 'Quantidade Vendida', 'Total (EUR)']);
         summary.breakdown.forEach((item) => {
           rows.push([
             item.name,
-            String(item.qty),
+            item.unit === 'kg' ? 'kg' : 'un',
+            String(item.qty).replace('.', ','),
             Number(item.total).toFixed(2).replace('.', ',')
           ]);
         });
         rows.push([
           'TOTAL GERAL',
-          String(summary.totalItemsSold),
+          '',
+          `${summary.totalUnitItemsSold} un + ${String(summary.totalWeightKgSold).replace('.', ',')} kg`,
           Number(summary.totalRevenue).toFixed(2).replace('.', ',')
         ]);
         rows.push([]);
 
-        // Section 2: Detailed Transaction Log
         rows.push(['HISTORICO DETALHADO DE VENDAS']);
         rows.push([
           'ID Venda',
@@ -2469,7 +2928,11 @@
           const dateStr = formatSaleDate(sale.timestamp);
           const timeStr = formatSaleTime(sale.timestamp);
           const itemsDesc = (Array.isArray(sale.items) ? sale.items : [])
-            .map((i) => `${i.qty}x ${i.name} (${Number(i.price).toFixed(2).replace('.', ',')}€)`)
+            .map((i) =>
+              i.unit === 'kg'
+                ? `${formatWeight(i.qty)} ${i.name} (${Number(i.price).toFixed(2).replace('.', ',')}€/kg)`
+                : `${i.qty}x ${i.name} (${Number(i.price).toFixed(2).replace('.', ',')}€)`
+            )
             .join(' + ');
 
           rows.push([
@@ -2508,7 +2971,7 @@
       }
 
       // ==========================================
-      // 7. ACTIONS: CHECKOUT & MODALS
+      // 8. ACTIONS: CHECKOUT & MODALS
       // ==========================================
       function handleFinalizeSale() {
         if (StateManager.cart.length === 0) {
@@ -2541,7 +3004,9 @@
             id: item.id,
             name: item.name,
             price: item.price,
-            qty: item.qty
+            qty: item.qty,
+            unit: item.unit === 'kg' ? 'kg' : 'un',
+            lineTotal: roundCurrency(item.price * item.qty)
           }))
         };
 
@@ -2595,7 +3060,7 @@
       }
 
       // ==========================================
-      // 8. EVENT LISTENERS & INITIALIZATION
+      // 9. EVENT LISTENERS & INITIALIZATION
       // ==========================================
       function bindEvents() {
         // Top navigation bar tab switching
@@ -2631,7 +3096,7 @@
           });
         }
 
-        // Product Grid tap: add product OR open "+ Valor Livre" modal
+        // Product Grid tap: add unit product, open weight modal for kg product, OR open "+ Valor Livre" modal
         const productGrid = document.getElementById('product-grid');
         const customDialog = document.getElementById('custom-item-dialog');
         const customPriceInput = document.getElementById('custom-item-price');
@@ -2655,6 +3120,12 @@
             const product = StateManager.products.find((p) => p.id === productId);
             if (!product) return;
 
+            // If product is sold by weight (€/kg), open the Weight Calculator Modal
+            if (product.unit === 'kg') {
+              openWeightModal(product, null);
+              return;
+            }
+
             StateManager.addToCart(product);
             renderProductGrid();
             renderCart();
@@ -2667,6 +3138,94 @@
               void updatedCard.offsetWidth;
               updatedCard.classList.add('animate-card-pulse');
             }
+          });
+        }
+
+        // Weight Modal ("⚖️ Pesagem") Events
+        const weightDialog = document.getElementById('weight-item-dialog');
+        const weightForm = document.getElementById('weight-item-form');
+        const gramsInput = document.getElementById('weight-input-grams');
+        const kgInput = document.getElementById('weight-input-kg');
+        const weightError = document.getElementById('weight-input-error');
+        const closeWeightBtn = document.getElementById('close-weight-dialog-btn');
+        const cancelWeightBtn = document.getElementById('cancel-weight-item-btn');
+
+        document.querySelectorAll('.preset-weight-btn').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const grams = Number(btn.getAttribute('data-preset-grams'));
+            if (!grams || Number.isNaN(grams)) return;
+            const kg = roundWeight(grams / 1000);
+            if (gramsInput) {
+              gramsInput.value = String(grams);
+              gramsInput.removeAttribute('aria-invalid');
+            }
+            if (kgInput) {
+              kgInput.value = String(kg);
+              kgInput.removeAttribute('aria-invalid');
+            }
+            if (weightError) weightError.classList.add('hidden');
+            updateWeightLivePreview();
+          });
+        });
+
+        if (gramsInput && kgInput) {
+          gramsInput.addEventListener('input', () => {
+            if (weightError) weightError.classList.add('hidden');
+            gramsInput.removeAttribute('aria-invalid');
+            const gVal = Number(gramsInput.value);
+            if (gramsInput.value !== '' && !Number.isNaN(gVal) && gVal >= 0) {
+              kgInput.value = String(roundWeight(gVal / 1000));
+            } else {
+              kgInput.value = '';
+            }
+            updateWeightLivePreview();
+          });
+
+          kgInput.addEventListener('input', () => {
+            if (weightError) weightError.classList.add('hidden');
+            kgInput.removeAttribute('aria-invalid');
+            const kVal = Number(kgInput.value);
+            if (kgInput.value !== '' && !Number.isNaN(kVal) && kVal >= 0) {
+              gramsInput.value = String(Math.round(kVal * 1000));
+            } else {
+              gramsInput.value = '';
+            }
+            updateWeightLivePreview();
+          });
+        }
+
+        if (closeWeightBtn && weightDialog) {
+          closeWeightBtn.addEventListener('click', () => weightDialog.close());
+        }
+        if (cancelWeightBtn && weightDialog) {
+          cancelWeightBtn.addEventListener('click', () => weightDialog.close());
+        }
+
+        if (weightForm && weightDialog) {
+          weightForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const kgVal = kgInput ? roundWeight(Number(kgInput.value)) : 0;
+            if (!kgVal || Number.isNaN(kgVal) || kgVal <= 0) {
+              if (weightError) weightError.classList.remove('hidden');
+              if (gramsInput) {
+                gramsInput.setAttribute('aria-invalid', 'true');
+                gramsInput.focus();
+              }
+              return;
+            }
+
+            const product = StateManager.activeWeightProduct;
+            if (!product) return;
+
+            if (StateManager.editingCartWeightIndex !== null) {
+              StateManager.updateCartWeight(StateManager.editingCartWeightIndex, kgVal);
+            } else {
+              StateManager.addToCart(product, kgVal);
+            }
+
+            weightDialog.close();
+            renderProductGrid();
+            renderCart();
           });
         }
 
@@ -2722,6 +3281,7 @@
               id: 'custom_' + Date.now(),
               name: description,
               price: roundCurrency(rawPrice),
+              unit: 'un',
               emoji: '🏷️'
             });
 
@@ -2730,10 +3290,20 @@
           });
         }
 
-        // Basket [ - ] and [ + ] stepper buttons
+        // Basket [ - ], [ + ], and [ ⚖️ Peso ] buttons
         const cartItemsContainer = document.getElementById('cart-items-container');
         if (cartItemsContainer) {
           cartItemsContainer.addEventListener('click', (e) => {
+            const editWeightBtn = e.target.closest('button[data-edit-cart-weight]');
+            if (editWeightBtn) {
+              const idx = Number(editWeightBtn.getAttribute('data-edit-cart-weight'));
+              const cartItem = StateManager.cart[idx];
+              if (cartItem && cartItem.unit === 'kg') {
+                openWeightModal(cartItem, idx);
+              }
+              return;
+            }
+
             const btn = e.target.closest('button[data-cart-index]');
             if (!btn) return;
             const index = Number(btn.getAttribute('data-cart-index'));
@@ -2844,6 +3414,10 @@
         const restoreDefaultsBtn = document.getElementById('restore-defaults-btn');
         const restoreDefaultsDialog = document.getElementById('confirm-restore-defaults-dialog');
 
+        document.querySelectorAll('input[name="product_unit"]').forEach((radio) => {
+          radio.addEventListener('change', updateProductFormUnitUI);
+        });
+
         if (emojiGrid && prodEmojiInput) {
           emojiGrid.addEventListener('click', (e) => {
             const btn = e.target.closest('button[data-emoji]');
@@ -2891,6 +3465,10 @@
               'input[name="product_category"]:checked'
             );
             const categoryVal = checkedRadio ? checkedRadio.value : 'Comida';
+            const checkedUnit = document.querySelector(
+              'input[name="product_unit"]:checked'
+            );
+            const unitVal = checkedUnit ? checkedUnit.value : 'un';
 
             let hasError = false;
             if (!nameVal) {
@@ -2918,7 +3496,8 @@
               name: nameVal,
               price: priceVal,
               category: categoryVal,
-              emoji: emojiVal || '🍂'
+              emoji: emojiVal || '🍂',
+              unit: unitVal
             });
 
             resetProductForm();
@@ -2949,7 +3528,7 @@
 
               StateManager.pendingDeleteProductId = prod.id;
               if (deleteProductDesc) {
-                deleteProductDesc.textContent = `Tem a certeza de que pretende apagar "${prod.emoji} ${prod.name}" (${formatCurrency(prod.price)}) do catálogo?`;
+                deleteProductDesc.textContent = `Tem a certeza de que pretende apagar "${prod.emoji} ${prod.name}" (${formatProductRate(prod.price, prod.unit)}) do catálogo?`;
               }
               deleteProductDialog.returnValue = '';
               deleteProductDialog.showModal();
@@ -2995,7 +3574,7 @@
               refreshAllViews();
               showToast(
                 'Catálogo inicial reposto!',
-                'Os 9 produtos tradicionais da Feira de Outono foram restaurados.'
+                'Os produtos tradicionais da Feira de Outono foram restaurados.'
               );
             }
             restoreDefaultsDialog.returnValue = '';
@@ -3036,7 +3615,11 @@
             if (!sale) return;
 
             const itemsSummary = (Array.isArray(sale.items) ? sale.items : [])
-              .map((i) => `${i.qty}× ${i.name}`)
+              .map((i) =>
+                i.unit === 'kg'
+                  ? `${formatWeight(i.qty)} ${i.name}`
+                  : `${i.qty}× ${i.name}`
+              )
               .join(', ');
 
             StateManager.pendingVoidSaleId = sale.saleId;
